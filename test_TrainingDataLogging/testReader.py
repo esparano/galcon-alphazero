@@ -6,7 +6,8 @@ from watchdog.events import FileSystemEventHandler
 from ratelimit import limits
 
 DATA_PATH = 'C:\\Users\\Evan Sparano\\AppData\\Roaming\\Galcon 2'
-CONST_MOD_NAME = 'test'
+# CHANGE THIS TO THE MOD NAME TO START PICKING UP DATA FROM ITS BIN FILE
+CONST_MOD_NAME = 'mod_botwar_train'
 SLEEP_SECONDS = 0.1
 
 

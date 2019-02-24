@@ -35,7 +35,11 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
         -- DO TRAINING
         training_example(G, G[USER])
         -- TODO: use eval in some way
-        --local eval = eval_predict(G, G[USER])
+        local eval = eval_predict(G, G[USER])
+        --print(G[USER].n)
+        if G[USER].n == 2 then
+            print(eval)
+        end
 
         -- filter all items to just planets
         local planets = {}
@@ -181,8 +185,8 @@ function init()
         total = 0,
         timeout = 300.0,
         players = 4, -- max number of players in a round
-        speed = 15, -- more time per loop, 15 max (1/4 second)
-        ticks = 10, -- more loops per frame
+        speed = 1, -- more time per loop, 15 max (1/4 second)
+        ticks = 1, -- more loops per frame
         live = false
     }
 
