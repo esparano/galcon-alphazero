@@ -1,4 +1,4 @@
-require("mod_map_helper")
+require("mod_map_wrapper")
 require("mod_features")
 
 local function getOtherPlayer(user, userList)
