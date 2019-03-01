@@ -32,11 +32,6 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
             return
         end -- do an action once per second
 
-        -- DO TRAINING
-        training_example(G, G[USER])
-        -- TODO: use eval in some way
-        --local eval = eval_predict(G, G[USER])
-
         -- filter all items to just planets
         local planets = {}
         for _, o in pairs(G) do
@@ -44,6 +39,25 @@ function _sandbox_init(_ENV) -- ignore -------------------------------------
                 planets[#planets + 1] = o
             end
         end
+
+        -------------------------------------------------------------------------
+        -- DO TRAINING
+        local enemyN
+        for i, p in pairs(planets) do
+            if not p.neutral and p.owner ~= USER then
+                enemyN = p.owner
+            end
+        end
+        training_example(G, G[USER])
+        training_example(G, G[enemyN])
+        -- TODO: use eval in some way
+        --[[]
+        local eval = eval_predict(G, G[USER])
+        if G[USER].n == 2 then
+            print("eval " .. eval)
+        end
+        --]]
+        -------------------------------------------------------------------------
 
         -- search list for the best match by greatest result
         local function find(Q, f)

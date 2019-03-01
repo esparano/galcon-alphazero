@@ -1,14 +1,6 @@
 require("mod_map_wrapper")
 require("mod_features")
 
-local function getOtherPlayer(user, userList)
-    for _, other in ipairs(userList) do
-        if other.n ~= user.n then
-            return other
-        end
-    end
-end
-
 local gameData
 function training_startGame()
     gameData = {}
@@ -18,17 +10,17 @@ end
 -- TODO: make it work for teams or players
 function training_example(items, user)
     local m = Map.new(items)
-    local enemy = getOtherPlayer(user, m:getUserList(false))
-    if enemy == nil then
+    if user == nil then
+        -- may happen at the end of a game when one player is dead...
         print("ERROR: testEval: there is only one player")
         return
     end
-    local f = features.getAll(m, user, enemy)
+    local f = features.getAll(m, user)
     for _, val in ipairs(f) do
         -- if any feature is undefined, don't add training data
         -- TODO: stop NaNs in the first place
         if val ~= val then
-            --print("invalid training data")
+            print("invalid training data")
             return
         end
     end
