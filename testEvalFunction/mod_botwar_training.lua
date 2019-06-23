@@ -196,7 +196,7 @@ function init()
         timeout = 300.0,
         players = 4, -- max number of players in a round
         speed = 15, -- more time per loop, 15 max (1/4 second)
-        ticks = 10, -- more loops per frame
+        ticks = 15, -- more loops per frame
         live = false
     }
 
