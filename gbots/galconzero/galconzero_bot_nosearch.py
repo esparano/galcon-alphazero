@@ -12,7 +12,8 @@ def log(msg): sys.stderr.write(msg+"\n"); sys.stderr.flush()
 
 
 def bot(g):
-    (perc, source, target) = getBestMove(g)
+    # just enough iterations to create a child for each possible move, but no more
+    (perc, source, target) = getBestMove(g, iterationLimit=30)
     moveString = "/SEND {} {} {}\n".format(perc, source, target)
     send(moveString)
 
@@ -76,7 +77,7 @@ def parse(g, line):
             color=int(t[3], 16),
             team=int(t[4]),
             xid=int(t[5]),
-            neutral=int(t[1]) == 1, # TODO: this is probably unstable?
+            neutral=int(t[1]) == 1,
         )
         g.items[o.n] = o
     elif t[0] == "/PLANET":
@@ -89,7 +90,7 @@ def parse(g, line):
             y=float(t[5]),
             production=float(t[6]),
             radius=float(t[7]),
-            neutral=int(t[2]) == 1, # TODO: this is probably unstable???
+            neutral=int(t[2]) == 1,
         )
         g.items[o.n] = o
     elif t[0] == "/FLEET":
@@ -104,6 +105,7 @@ def parse(g, line):
             target=int(t[7]),
             radius=float(t[8]),
             xid=int(t[9]),
+            neutral=int(t[2]) == 1,
         )
         g.items[o.n] = o
     elif t[0] == "/DESTROY":
