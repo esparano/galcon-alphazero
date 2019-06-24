@@ -1,6 +1,10 @@
 from mcts import mcts
 from eprint import eprint
 from galconState import GalconState
+from evalAndMoveGen import EvalAndMoveGen
+
+defaultActionGen = EvalAndMoveGen()
+defaultEvaluator = defaultActionGen
 
 
 def earlyEvalRolloutPolicy(state):
@@ -14,13 +18,14 @@ def getEnemyUserN(g):
     assert False, "Enemy user not found"
 
 
-def getBestMove(g, iterationLimit=1000):
+def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=defaultEvaluator):
     mctsSearch = mcts(iterationLimit=iterationLimit,
                       explorationConstant=1, rolloutPolicy=earlyEvalRolloutPolicy)
 
     enemyN = getEnemyUserN(g)
     assert enemyN != g.you, "Enemy user was the same as bot user"
-    state = GalconState(g.items, g.you, enemyN)
+
+    state = GalconState(g.items, g.you, enemyN, actionGen, evaluator)
 
     mctsSearch.search(state)
 
