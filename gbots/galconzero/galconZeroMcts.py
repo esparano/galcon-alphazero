@@ -1,5 +1,5 @@
 from mcts import mcts
-from eprint import eprint
+from log import log
 from galconState import GalconState
 from evalAndMoveGen import EvalAndMoveGen
 
@@ -34,17 +34,17 @@ def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=de
 
     chosenAction = None
 
-    eprint("ACTION TREE:")
+    log("ACTION TREE:")
     currentNode = mctsSearch.root
     while currentNode.children:
         bestChild = mctsSearch.getBestChild(currentNode, 0)
         bestAction = mctsSearch.getAction(currentNode, bestChild)
-        eprint(bestAction)
+        log(bestAction)
 
         if chosenAction is None:
             chosenAction = bestAction
 
         currentNode = bestChild
 
-    eprint("END ACTION TREE")
+    log("END ACTION TREE")
     return chosenAction

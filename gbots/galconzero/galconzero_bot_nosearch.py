@@ -13,7 +13,7 @@ def log(msg): sys.stderr.write(msg+"\n"); sys.stderr.flush()
 
 def bot(g):
     # just enough iterations to create a child for each possible move, but no more
-    (perc, source, target) = getBestMove(g, iterationLimit=30)
+    (source, target, perc) = getBestMove(g, iterationLimit=30)
     moveString = "/SEND {} {} {}\n".format(perc, source, target)
     send(moveString)
 

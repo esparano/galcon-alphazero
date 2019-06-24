@@ -12,8 +12,9 @@ def log(msg): sys.stderr.write(msg+"\n"); sys.stderr.flush()
 
 
 def bot(g):
-    (perc, source, target) = getBestMove(g)
+    (source, target, perc) = getBestMove(g, iterationLimit=200)
     moveString = "/SEND {} {} {}\n".format(perc, source, target)
+    print("SENDING MOVESTRING: " + moveString)
     send(moveString)
 
 ################################################################################
