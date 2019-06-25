@@ -1,6 +1,7 @@
 import sys
 import random
 from galconZeroMcts import getBestMove
+from models import Galaxy, Item
 
 
 def send(msg): sys.stdout.write(msg+"\n"); sys.stdout.flush()
@@ -14,25 +15,9 @@ def log(msg): sys.stderr.write(msg+"\n"); sys.stderr.flush()
 def bot(g):
     (source, target, perc) = getBestMove(g, iterationLimit=200)
     moveString = "/SEND {} {} {}\n".format(perc, source, target)
-    print("SENDING MOVESTRING: " + moveString)
     send(moveString)
 
 ################################################################################
-
-
-class Item:
-    def __init__(self, **args):
-        self.__dict__ = args
-
-
-class Galaxy:
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.state = ''
-        self.items = {}
-        self.you = 0
 
 
 def main():
