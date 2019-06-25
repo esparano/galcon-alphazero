@@ -2,21 +2,17 @@ import sys
 import random
 from galconZeroMcts import getBestMove
 from models import Galaxy, Item
+from log import send, log
+from commitAction import commitAction
 
-
-def send(msg): sys.stdout.write(msg+"\n"); sys.stdout.flush()
-
-
-def log(msg): sys.stderr.write(msg+"\n"); sys.stderr.flush()
 
 ################################################################################
 
 
 def bot(g):
     # just enough iterations to create a child for each possible move, but no more
-    (source, target, perc) = getBestMove(g, iterationLimit=30)
-    moveString = "/SEND {} {} {}\n".format(perc, source, target)
-    send(moveString)
+    action = getBestMove(g, iterationLimit=1)
+    commitAction(action)
 
 ################################################################################
 

@@ -53,6 +53,7 @@ class mcts():
     def search(self, initialState):
         self.root = treeNode(initialState, None)
 
+        self.visited = 0
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000
             while time.time() < timeLimit:
@@ -62,9 +63,10 @@ class mcts():
                 self.executeRound()
 
         bestChild = self.getBestChild(self.root, 0)
-        return self.getAction(self.root, bestChild)
+        return self.getAction(self.root, bestChild), self.visited
 
     def executeRound(self):
+        self.visited += 1
         node = self.selectNode(self.root)
         reward = self.rollout(node.state)
         self.backpropagate(node, reward)

@@ -1,4 +1,4 @@
-from gz_mathutils import futureShips, timeToDist, angle, getVectorComponents
+from gz_mathutils import futureShips, timeToDist, angle, getVectorComponents, dist
 
 # TODO: gradual fleet landing
 # land the fleet, even if it's far away
@@ -16,7 +16,6 @@ def forceLandFleet(items, fleet):
             # change ownership
             target.ships = -diff
             target.owner = fleet.owner
-            target.team = fleet.team
             target.neutral = False
         else:
             target.ships = diff
@@ -32,7 +31,6 @@ def simulate(items, timestep=0.25):
     for p in items.values():
         # TODO: optimize!!
         if p.type == 'planet':
-            vvvvvvvvvvvvvvvvvvvvvvvv
             p.ships = futureShips(p, timestep)
 
     # second, move fleets towards goal.
@@ -42,7 +40,7 @@ def simulate(items, timestep=0.25):
     # for small enough timestep
 
     fleetUpdateDist = timeToDist(timestep)
-    for f in items.values():
+    for f in list(items.values()):
         # TODO: optimize!!
         if f.type == 'fleet':
             target = items[f.target]

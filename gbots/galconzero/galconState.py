@@ -5,6 +5,7 @@ from models import Item
 from stateSim import simulate
 from actions import SEND_ACTION, REDIRECT_ACTION, NULL_ACTION
 
+
 NEW_FLEET_N = 10000
 
 
@@ -36,7 +37,7 @@ class GalconState():
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
-        simulate(self.items, 1)
+        simulate(newState.items, 10)
 
         return newState
 
@@ -59,6 +60,7 @@ class GalconState():
         (xSpawnOffset, ySpawnOffset) = getVectorComponents(
             angle(source, target), source.radius)
 
+        global NEW_FLEET_N
         createdFleet = Item(
             n=NEW_FLEET_N,
             type="fleet",
@@ -74,8 +76,10 @@ class GalconState():
 
         # TODO: make sure this doesn't overwrite an object?
         # Is it even possible for it to overwrite an object?
+        print("adding to items {}".format(createdFleet.n))
         self.items[createdFleet.n] = createdFleet
-        NEW_FLEET_N = NEW_FLEET_N + 1
+
+        NEW_FLEET_N += 1
 
     # TODO: test this
     def executeRedirect(self, redirectAction):

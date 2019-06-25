@@ -19,20 +19,21 @@ def getEnemyUserN(g):
 
 
 def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=defaultEvaluator):
-    mctsSearch = mcts(iterationLimit=iterationLimit,
+    mctsSearch = mcts(timeLimit=iterationLimit,
                       explorationConstant=1, rolloutPolicy=earlyEvalRolloutPolicy)
 
     enemyN = getEnemyUserN(g)
     assert enemyN != g.you, "Enemy user was the same as bot user"
 
-    state = GalconState(g.items, g.you, enemyN, actionGen, evaluator)
+    state = GalconState(
+        g.items, g.you, enemyN, actionGen, evaluator)
 
-    mctsSearch.search(state)
+    chosenAction, numVisited = mctsSearch.search(state)
+    log("nodes: {}".format(numVisited))
 
+    '''
     # for testing, print out sequences of moves
     mctsSearch.searchLimit = 0
-
-    chosenAction = None
 
     log("ACTION TREE:")
     currentNode = mctsSearch.root
@@ -41,10 +42,9 @@ def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=de
         bestAction = mctsSearch.getAction(currentNode, bestChild)
         log(bestAction)
 
-        if chosenAction is None:
-            chosenAction = bestAction
-
         currentNode = bestChild
 
     log("END ACTION TREE")
+    '''
+
     return chosenAction
