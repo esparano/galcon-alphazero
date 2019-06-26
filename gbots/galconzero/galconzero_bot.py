@@ -129,5 +129,5 @@ def sync(g, t):
 
 
 if __name__ == "__main__":
-    cProfile.run('main()', "savedStats")
-    # main()
+    # cProfile.run('main()', "savedStats")
+    main()

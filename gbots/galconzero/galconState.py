@@ -1,4 +1,3 @@
-from copy import deepcopy
 from log import log
 from gz_mathutils import getVectorComponents, angle
 from models import Item
@@ -26,8 +25,10 @@ class GalconState():
         return self.actionGen.getPossibleActions(self.items, self.playerN, self.enemyN)
 
     def takeAction(self, action):
-        newItems = deepcopy(self.items)
-        newState = GalconState(newItems, self.enemyN,
+        # TODO: this can be heavily optimized. a map object could store static data like planet x,y,prod, and nodes
+        # could contain deltas from parent states instead of an entirely new copy of the map?
+        itemDictCopy = {k: self.items[k].getCopy() for k in self.items}
+        newState = GalconState(itemDictCopy, self.enemyN,
                                self.playerN, self.actionGen, self.evaluator)
 
         if action[0] == SEND_ACTION:
