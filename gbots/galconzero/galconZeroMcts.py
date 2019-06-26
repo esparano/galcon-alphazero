@@ -19,14 +19,13 @@ def getEnemyUserN(g):
 
 
 def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=defaultEvaluator):
-    mctsSearch = mcts(timeLimit=iterationLimit,
-                      explorationConstant=1, rolloutPolicy=earlyEvalRolloutPolicy)
+    mctsSearch = mcts(rolloutPolicy=earlyEvalRolloutPolicy,
+                      timeLimit=iterationLimit, explorationConstant=1)
 
     enemyN = getEnemyUserN(g)
     assert enemyN != g.you, "Enemy user was the same as bot user"
 
-    state = GalconState(
-        g.items, g.you, enemyN, actionGen, evaluator)
+    state = GalconState(g.items, g.you, enemyN, actionGen, evaluator)
 
     chosenAction, numVisited = mctsSearch.search(state)
     log("nodes: {}".format(numVisited))

@@ -5,6 +5,8 @@ from models import Galaxy, Item
 from log import send, log
 from commitAction import commitAction
 
+import cProfile
+
 
 ################################################################################
 
@@ -127,4 +129,5 @@ def sync(g, t):
 
 
 if __name__ == "__main__":
-    main()
+    cProfile.run('main()', "savedStats")
+    # main()

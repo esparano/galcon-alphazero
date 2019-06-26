@@ -4,33 +4,37 @@ import time
 import math
 import random
 
+from numba import jit
+from functools import lru_cache
 
-def randomPolicy(state):
-    while not state.isTerminal():
-        try:
-            action = random.choice(state.getPossibleActions())
-        except IndexError:
-            raise Exception(
-                "Non-terminal state has no possible actions: " + str(state))
-        state = state.takeAction(action)
-    return state.getReward()
+from log import log
+
+
+@lru_cache(maxsize=131072)
+def optLog(n):
+    return math.log(n)
+
+
+@lru_cache(maxsize=131072)
+def optSqrt(n):
+    return math.sqrt(n)
 
 
 class treeNode():
-    def __init__(self, state, parent):
+    def __init__(self, state, parent=None, prevAction=None):
         self.state = state
         self.isTerminal = state.isTerminal()
         self.isFullyExpanded = self.isTerminal
         self.parent = parent
+        self.prevAction = prevAction
         self.numVisits = 0
         self.totalReward = 0
-        self.children = {}
+        self.children = []
         self.remainingActions = None
 
 
 class mcts():
-    def __init__(self, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2),
-                 rolloutPolicy=randomPolicy):
+    def __init__(self, rolloutPolicy, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
         if timeLimit != None:
             if iterationLimit != None:
                 raise ValueError(
@@ -51,7 +55,7 @@ class mcts():
         self.rollout = rolloutPolicy
 
     def search(self, initialState):
-        self.root = treeNode(initialState, None)
+        self.root = treeNode(initialState)
 
         self.visited = 0
         if self.limitType == 'time':
@@ -63,7 +67,7 @@ class mcts():
                 self.executeRound()
 
         bestChild = self.getBestChild(self.root, 0)
-        return self.getAction(self.root, bestChild), self.visited
+        return bestChild.prevAction, self.visited
 
     def executeRound(self):
         self.visited += 1
@@ -79,17 +83,6 @@ class mcts():
                 return self.expand(node)
         return node
 
-    # def expand(self, node):
-    #     actions = node.state.getPossibleActions()
-    #     for action in actions:
-    #         if action not in node.children.keys():
-    #             newNode = treeNode(node.state.takeAction(action), node)
-    #             node.children[action] = newNode
-    #             if len(actions) == len(node.children):
-    #                 node.isFullyExpanded = True
-    #             return newNode
-    #     raise Exception("Should never reach here")
-
     def expand(self, node):
         if node.remainingActions == None:
             # Only ask the state to generate actions once, instead of len(actions) times
@@ -102,30 +95,27 @@ class mcts():
         if len(node.remainingActions) == 0:
             node.isFullyExpanded = True
 
-        newNode = treeNode(node.state.takeAction(action), node)
-        node.children[action] = newNode
+        newNode = treeNode(node.state.takeAction(action), node, action)
+        node.children.append(newNode)
         return newNode
 
     def backpropagate(self, node, reward):
         while node is not None:
             node.numVisits += 1
             node.totalReward += reward
+            node.q = node.totalReward / node.numVisits
             node = node.parent
 
     def getBestChild(self, node, explorationValue):
         bestValue = float("-inf")
-        bestNodes = []
-        for child in node.children.values():
-            nodeValue = child.totalReward / child.numVisits + explorationValue * math.sqrt(
-                2 * math.log(node.numVisits) / child.numVisits)
+        bestNode = None
+        # TODO: modify this to use PUCT with prior probabilities instead of UCT
+        logNodeVisits = 2 * optLog(node.numVisits)
+        # This is extremely slow because it's called a lot of times... optimize this?
+        for child in node.children:
+            nodeValue = child.q + explorationValue * \
+                optSqrt(logNodeVisits / child.numVisits)
             if nodeValue > bestValue:
                 bestValue = nodeValue
-                bestNodes = [child]
-            elif nodeValue == bestValue:
-                bestNodes.append(child)
-        return random.choice(bestNodes)
-
-    def getAction(self, root, bestChild):
-        for action, node in root.children.items():
-            if node is bestChild:
-                return action
+                bestNode = child
+        return bestNode
