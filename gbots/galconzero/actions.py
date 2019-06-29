@@ -1,15 +1,15 @@
-SEND_ACTION = "s"
-REDIRECT_ACTION = "r"
-NULL_ACTION = "n"
+SEND_ACTION = "SEND"
+REDIRECT_ACTION = "REDIR"
+NULL_ACTION = "NULL"
 
 
-def createSendAction(source, target, percent):
-    return (SEND_ACTION, source, target, percent)
+def createSendAction(priorProb, source, target, percent):
+    return (priorProb, SEND_ACTION, source, target, percent)
 
 
-def createRedirectAction(source, target):
-    return (REDIRECT_ACTION, source, target)
+def createRedirectAction(priorProb, source, target):
+    return (priorProb, REDIRECT_ACTION, source, target)
 
 
-def createNullAction():
-    return (NULL_ACTION)
+def createNullAction(priorProb):
+    return (priorProb, NULL_ACTION)

@@ -11,11 +11,6 @@ from log import log
 
 
 @lru_cache(maxsize=131072)
-def optLog(n):
-    return math.log(n)
-
-
-@lru_cache(maxsize=131072)
 def optSqrt(n):
     return math.sqrt(n)
 
@@ -27,8 +22,9 @@ class treeNode():
         self.isFullyExpanded = self.isTerminal
         self.parent = parent
         self.prevAction = prevAction
-        self.numVisits = 0
+        self.n = 0
         self.totalReward = 0
+        self.q = 0
         self.children = []
         self.remainingActions = None
 
@@ -66,7 +62,7 @@ class mcts():
             for _ in range(self.searchLimit):
                 self.executeRound()
 
-        bestChild = self.getBestChild(self.root, 0)
+        bestChild = self.getPrincipalVariation(self.root)
         return bestChild.prevAction, self.visited
 
     def executeRound(self):
@@ -77,17 +73,17 @@ class mcts():
 
     def selectNode(self, node):
         while not node.isTerminal:
+            # TODO: only expand once child is selected. Don't have to expand EVERY child node because we have a default Q.
             if node.isFullyExpanded:
-                node = self.getBestChild(node, self.explorationConstant)
+                node = self.getBestChild(node)
             else:
                 return self.expand(node)
         return node
 
     def expand(self, node):
         if node.remainingActions == None:
-            # Only ask the state to generate actions once, instead of len(actions) times
-            node.remainingActions = node.state.getPossibleActions()
-            random.shuffle(node.remainingActions)
+            # Only ask the state to generate priors once, instead of len(actions) times
+            node.remainingActions = node.state.getPriorProbabilities()
 
         # remainingActions has already been shuffled, so this retains randomness in O(1) time
         action = node.remainingActions.pop()
@@ -101,21 +97,41 @@ class mcts():
 
     def backpropagate(self, node, reward):
         while node is not None:
-            node.numVisits += 1
+            node.n += 1
             node.totalReward += reward
-            node.q = node.totalReward / node.numVisits
+            node.q = node.totalReward / node.n
             node = node.parent
 
-    def getBestChild(self, node, explorationValue):
+    # This is extremely slow because it's called a lot of times... optimize this?
+    # TODO: node object pooling
+    # TODO: dirichlet noise if at root
+    # TODO: default Q for child so you don't necessarily have to explore?
+    # TODO: Skip child if at root node and child can't possibly catch up to highest_N node given remaining time/iterations
+    # TODO: first play urgency
+    def getBestChild(self, parent):
         bestValue = float("-inf")
         bestNode = None
-        # TODO: modify this to use PUCT with prior probabilities instead of UCT
-        logNodeVisits = 2 * optLog(node.numVisits)
+
         # This is extremely slow because it's called a lot of times... optimize this?
-        for child in node.children:
-            nodeValue = child.q + explorationValue * \
-                optSqrt(logNodeVisits / child.numVisits)
+
+        if (parent.n < 1):
+            # TODO: leela uses 1 if parent.n is 0, I think
+            assert parent.n > 0, "ERROR: NODE VISITS LESS THAN 1"
+        factor = self.explorationConstant * optSqrt(parent.n)
+
+        for child in parent.children:
+            Q = child.q if child.n > 0 else parent.q
+            U = child.prevAction[0] / (1 + child.n)
+            # log("Q: {}, U: {}, action: {}".format(Q, U, child.prevAction))
+            nodeValue = Q + factor * U
+            # log('nodeValue: {}, bestValue: {}'.format(nodeValue, bestValue))
             if nodeValue > bestValue:
                 bestValue = nodeValue
                 bestNode = child
         return bestNode
+
+    def getPrincipalVariation(self, node):
+        # # TODO: try c.q instead of c.n
+        # for child in node.children:
+        #     log("child.n: {}".format(child.n))
+        return max(node.children, key=lambda c: c.n)

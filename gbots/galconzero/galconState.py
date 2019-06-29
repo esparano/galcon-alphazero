@@ -20,9 +20,12 @@ class GalconState():
         # TODO: expand and calculate both reward and possible actions simultaneously?
         # Then mark node as expanded and store results
 
-    # TODO: prior probabilities
-    def getPossibleActions(self):
-        return self.actionGen.getPossibleActions(self.items, self.playerN, self.enemyN)
+    def getPriorProbabilities(self):
+        actions = self.actionGen.getPriorProbabilities(
+            self.items, self.playerN, self.enemyN)
+        assert sum(
+            action[0] for action in actions) == 1, "prior probabilities did not add to 1. Sum was :1?"
+        return actions
 
     def takeAction(self, action):
         # TODO: this can be heavily optimized. a map object could store static data like planet x,y,prod, and nodes
@@ -31,9 +34,9 @@ class GalconState():
         newState = GalconState(itemDictCopy, self.enemyN,
                                self.playerN, self.actionGen, self.evaluator)
 
-        if action[0] == SEND_ACTION:
+        if action[1] == SEND_ACTION:
             newState.executeSend(action)
-        elif action[0] == REDIRECT_ACTION:
+        elif action[1] == REDIRECT_ACTION:
             newState.executeRedirect(action)
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
@@ -44,7 +47,7 @@ class GalconState():
 
     # TODO: test this
     def executeSend(self, sendAction):
-        (_, sourceN, targetN, perc) = sendAction
+        (_, _, sourceN, targetN, perc) = sendAction
         source = self.items[sourceN]
         target = self.items[targetN]
 
@@ -84,7 +87,7 @@ class GalconState():
 
     # TODO: test this
     def executeRedirect(self, redirectAction):
-        (_, sourceN, targetN) = redirectAction
+        (_, _, sourceN, targetN) = redirectAction
         source = self.items[sourceN]
         source.target = targetN
 

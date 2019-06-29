@@ -28,22 +28,19 @@ def getBestMove(g, iterationLimit=1000, actionGen=defaultActionGen, evaluator=de
     state = GalconState(g.items, g.you, enemyN, actionGen, evaluator)
 
     chosenAction, numVisited = mctsSearch.search(state)
-    log("nodes: {}".format(numVisited))
 
-    '''
     # for testing, print out sequences of moves
-    mctsSearch.searchLimit = 0
-
     log("ACTION TREE:")
     currentNode = mctsSearch.root
+    depth = 0
     while currentNode.children:
-        bestChild = mctsSearch.getBestChild(currentNode, 0)
-        bestAction = mctsSearch.getAction(currentNode, bestChild)
-        log(bestAction)
+        bestChild = mctsSearch.getPrincipalVariation(currentNode)
+        log(bestChild.prevAction)
 
+        depth += 1
         currentNode = bestChild
-
     log("END ACTION TREE")
-    '''
+
+    log("nodes: {}, depth: {}".format(numVisited, depth))
 
     return chosenAction
