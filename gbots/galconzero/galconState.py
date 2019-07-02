@@ -1,3 +1,4 @@
+import math
 from log import log
 from gz_mathutils import getVectorComponents, angle
 from models import Item
@@ -11,28 +12,30 @@ NEW_FLEET_N = 10000
 class GalconState():
 
     # actionGen and evaluator are injected
-    def __init__(self, items, playerN, enemyN, actionGen, evaluator):
+    def __init__(self, items, playerN, enemyN, evaluator):
         self.items = items
         self.playerN = playerN
         self.enemyN = enemyN
-        self.actionGen = actionGen
         self.evaluator = evaluator
         # TODO: expand and calculate both reward and possible actions simultaneously?
         # Then mark node as expanded and store results
 
-    def getPriorProbabilities(self):
-        actions = self.actionGen.getPriorProbabilities(
+    def getPriorProbabilitiesAndEval(self):
+        actions, stateEval = self.evaluator.getPriorProbabilitiesAndEval(
             self.items, self.playerN, self.enemyN)
-        assert sum(
-            action[0] for action in actions) == 1, "prior probabilities did not add to 1. Sum was :1?"
-        return actions
+
+        #  TODO: remove
+        priorsSum = sum(action[0] for action in actions)
+        assert math.isclose(priorsSum, 1), "prior probabilities sum {} != 1.".format(
+            priorsSum)
+        return actions, stateEval
 
     def takeAction(self, action):
         # TODO: this can be heavily optimized. a map object could store static data like planet x,y,prod, and nodes
         # could contain deltas from parent states instead of an entirely new copy of the map?
         itemDictCopy = {k: self.items[k].getCopy() for k in self.items}
         newState = GalconState(itemDictCopy, self.enemyN,
-                               self.playerN, self.actionGen, self.evaluator)
+                               self.playerN, self.evaluator)
 
         if action[1] == SEND_ACTION:
             newState.executeSend(action)
@@ -41,7 +44,7 @@ class GalconState():
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
-        simulate(newState.items, 10)
+        simulate(newState.items, 2)
 
         return newState
 
@@ -80,7 +83,6 @@ class GalconState():
 
         # TODO: make sure this doesn't overwrite an object?
         # Is it even possible for it to overwrite an object?
-        print("adding to items {}".format(createdFleet.n))
         self.items[createdFleet.n] = createdFleet
 
         NEW_FLEET_N += 1
@@ -91,9 +93,8 @@ class GalconState():
         source = self.items[sourceN]
         source.target = targetN
 
-    # TODO:
+    # TODO: calculate terminal states
+    # It's possible that trying to determine terminal states will just cost more time than a search?
+    # If a terminal state is nearby, the game is basically over anyway?
     def isTerminal(self):
         return False
-
-    def getReward(self):
-        return self.evaluator.getEval(self.items, self.playerN, self.enemyN)

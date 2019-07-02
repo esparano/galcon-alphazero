@@ -1,16 +1,19 @@
 import math
 
+TIME_TO_DIST = 40 / 100  # normalized
+PROD_TO_SHIPS_PER_SEC = 50  # normalized
+
 
 def dist(a, b):
     return math.hypot(a.x - b.x, a.y - b.y)
 
 
 def timeToDist(time):
-    return time * 40
+    return time * TIME_TO_DIST
 
 
 def prodToShipsPerSec(prod):
-    return prod / 50
+    return prod / PROD_TO_SHIPS_PER_SEC
 
 
 def angle(source, target):

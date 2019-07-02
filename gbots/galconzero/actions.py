@@ -11,5 +11,8 @@ def createRedirectAction(priorProb, source, target):
     return (priorProb, REDIRECT_ACTION, source, target)
 
 
+import random
+
+
 def createNullAction(priorProb):
-    return (priorProb, NULL_ACTION)
+    return (priorProb, NULL_ACTION)  # , int(random.random() * 1000))

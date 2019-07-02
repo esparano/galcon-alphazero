@@ -1,17 +1,19 @@
 import sys
 import random
-from galconZeroMcts import getBestMove
+from galconZeroMcts import GalconZeroMcts
 from models import Galaxy, Item
 from log import send, log
 from commitAction import commitAction
 
+galconZeroMcts = GalconZeroMcts()
 
 ################################################################################
 
 
 def bot(g):
     # just enough iterations to create a child for each possible move, but no more
-    action = getBestMove(g, iterationLimit=1)
+    action = galconZeroMcts.getBestMove(
+        g, iterationLimit=1, saveTrainingData=False)
     commitAction(action)
 
 ################################################################################
@@ -67,12 +69,12 @@ def parse(g, line):
             n=int(t[1]),
             type="planet",
             owner=int(t[2]),
-            ships=float(t[3]),
-            x=float(t[4]),
-            y=float(t[5]),
-            production=float(t[6]),
-            radius=float(t[7]),
-            neutral=int(t[2]) == 1,
+            ships=float(t[3])/100,
+            x=float(t[4])/100,
+            y=float(t[5])/100,
+            production=float(t[6])/100,
+            radius=float(t[7])/100,
+            neutral=int(t[2]) == 1,  # TODO: this is probably unstable???
         )
         g.items[o.n] = o
     elif t[0] == "/FLEET":
@@ -80,14 +82,13 @@ def parse(g, line):
             n=int(t[1]),
             type="fleet",
             owner=int(t[2]),
-            ships=float(t[3]),
-            x=float(t[4]),
-            y=float(t[5]),
+            ships=float(t[3])/100,
+            x=float(t[4])/100,
+            y=float(t[5])/100,
             source=int(t[6]),
             target=int(t[7]),
-            radius=float(t[8]),
+            radius=float(t[8])/100,
             xid=int(t[9]),
-            neutral=int(t[2]) == 1,
         )
         g.items[o.n] = o
     elif t[0] == "/DESTROY":
@@ -112,13 +113,13 @@ def sync(g, t):
                 v = t[i]
                 i += 1
                 if k == 'X':
-                    o.x = float(v)
+                    o.x = float(v)/100  # TODO: verify normalization is working
                 elif k == 'Y':
-                    o.y = float(v)
+                    o.y = float(v)/100
                 elif k == 'S':
-                    o.ships = float(v)
+                    o.ships = float(v)/100
                 elif k == 'R':
-                    o.radius = float(v)
+                    o.radius = float(v)/100
                 elif k == 'O':
                     o.owner = float(v)
                     o.neutral = o.owner == 1

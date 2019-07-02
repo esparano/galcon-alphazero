@@ -4,10 +4,10 @@ import time
 import math
 import random
 
-from numba import jit
-from functools import lru_cache
-
 from log import log
+from actions import createNullAction
+
+from functools import lru_cache
 
 
 @lru_cache(maxsize=131072)
@@ -19,18 +19,18 @@ class treeNode():
     def __init__(self, state, parent=None, prevAction=None):
         self.state = state
         self.isTerminal = state.isTerminal()
-        self.isFullyExpanded = self.isTerminal
         self.parent = parent
         self.prevAction = prevAction
         self.n = 0
         self.totalReward = 0
         self.q = 0
-        self.children = []
-        self.remainingActions = None
+        self.children = {}
+        self.actions = None
+        self.isExpanded = False
 
 
 class mcts():
-    def __init__(self, rolloutPolicy, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
+    def __init__(self, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
         if timeLimit != None:
             if iterationLimit != None:
                 raise ValueError(
@@ -48,7 +48,6 @@ class mcts():
             self.searchLimit = iterationLimit
             self.limitType = 'iterations'
         self.explorationConstant = explorationConstant
-        self.rollout = rolloutPolicy
 
     def search(self, initialState):
         self.root = treeNode(initialState)
@@ -66,34 +65,29 @@ class mcts():
         return bestChild.prevAction, self.visited
 
     def executeRound(self):
-        self.visited += 1
         node = self.selectNode(self.root)
-        reward = self.rollout(node.state)
-        self.backpropagate(node, reward)
+        self.backpropagate(node, node.eval)
+        self.visited += 1
 
+    # get best child of node until terminal or unexpanded node is found
     def selectNode(self, node):
+        # TODO: maybe mark nodes as terminal?
+        # If terminal node is selected, don't attempt to expand
+        # A node with no actions is not possible because NULL_MOVE is always valid in Galcon
         while not node.isTerminal:
-            # TODO: only expand once child is selected. Don't have to expand EVERY child node because we have a default Q.
-            if node.isFullyExpanded:
-                node = self.getBestChild(node)
-            else:
-                return self.expand(node)
+            if not node.isExpanded:
+                self.expand(node)
+                return node
+            node = self.getBestChild(node)
         return node
 
     def expand(self, node):
-        if node.remainingActions == None:
-            # Only ask the state to generate priors once, instead of len(actions) times
-            node.remainingActions = node.state.getPriorProbabilities()
+        node.isExpanded = True
 
-        # remainingActions has already been shuffled, so this retains randomness in O(1) time
-        action = node.remainingActions.pop()
-        # TODO: assert action not in node.children.keys()? What about duplicate actions returned by getPossibleActions?
-        if len(node.remainingActions) == 0:
-            node.isFullyExpanded = True
-
-        newNode = treeNode(node.state.takeAction(action), node, action)
-        node.children.append(newNode)
-        return newNode
+        assert node.actions == None, "node priors were attempted to be calculated twice"
+        actions, stateEval = node.state.getPriorProbabilitiesAndEval()
+        node.actions = actions
+        node.eval = stateEval
 
     def backpropagate(self, node, reward):
         while node is not None:
@@ -101,6 +95,13 @@ class mcts():
             node.totalReward += reward
             node.q = node.totalReward / node.n
             node = node.parent
+
+    def getChildNode(self, node, action):
+        assert action is not None, "ERROR: action was None"
+        if action not in node.children:
+            newNode = treeNode(node.state.takeAction(action), node, action)
+            node.children[action] = newNode
+        return node.children[action]
 
     # This is extremely slow because it's called a lot of times... optimize this?
     # TODO: node object pooling
@@ -110,7 +111,7 @@ class mcts():
     # TODO: first play urgency
     def getBestChild(self, parent):
         bestValue = float("-inf")
-        bestNode = None
+        bestAction = None
 
         # This is extremely slow because it's called a lot of times... optimize this?
 
@@ -119,19 +120,33 @@ class mcts():
             assert parent.n > 0, "ERROR: NODE VISITS LESS THAN 1"
         factor = self.explorationConstant * optSqrt(parent.n)
 
-        for child in parent.children:
-            Q = child.q if child.n > 0 else parent.q
-            U = child.prevAction[0] / (1 + child.n)
+        for action in parent.actions:
+            # if child exists, use parent q (minus FirstPlayUrgency constant?)
+            if action in parent.children:
+                childNode = parent.children[action]
+                Q = childNode.q
+                U = action[0] / (1 + childNode.n)
+            else:
+                Q = parent.q
+                U = action[0]
+
             # log("Q: {}, U: {}, action: {}".format(Q, U, child.prevAction))
             nodeValue = Q + factor * U
             # log('nodeValue: {}, bestValue: {}'.format(nodeValue, bestValue))
             if nodeValue > bestValue:
                 bestValue = nodeValue
-                bestNode = child
-        return bestNode
+                bestAction = action
+        return self.getChildNode(parent, bestAction)
 
+    # returns "best" child node
     def getPrincipalVariation(self, node):
-        # # TODO: try c.q instead of c.n
-        # for child in node.children:
-        #     log("child.n: {}".format(child.n))
-        return max(node.children, key=lambda c: c.n)
+        for child in node.children.values():
+            pass
+            #log("child.n: {}".format(child.n))
+
+        # If there are no actions, return null action
+        if len(node.children.values()) == 0:
+            return self.getChildNode(node, createNullAction(1))
+
+        # TODO: try c.q instead of c.n
+        return max(node.children.values(), key=lambda c: c.n)
