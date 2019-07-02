@@ -2,8 +2,11 @@ import pickle
 import time
 from log import log
 
-DEFAULT_FILENAME = 'game_{}_{}.pickle'
+DEFAULT_FILENAME = 'galconzero/games/game_{}_{}.pickle'
 
+def loadTrainingGame(filename):
+    with open(filename, 'rb') as fp:
+        return pickle.load(fp)
 
 class TrainingGame():
     def __init__(self):

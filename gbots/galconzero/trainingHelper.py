@@ -49,6 +49,7 @@ class TrainingHelper():
             target += 1
         return self.sortedPlanetIds[source], self.sortedPlanetIds[target]
 
+    # TODO: use KD trees to speed up nearest neighbor searches.
     def getSortedPlanetIdDistToFleet(self, n, f):
         items = self.trainingGame.states[0]
         p = items[n]

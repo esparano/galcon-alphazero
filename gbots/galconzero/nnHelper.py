@@ -26,7 +26,6 @@ class NNHelper:
         self.model = load_model(modelFileName)
 
     # TODO: THIS IS A TEMPORARY HACK TO GET AROUND LIMITATIONS
-    # TODO: normalize?
     def getNNInput(self, items, playerN):
         trainingGame = TrainingGame()
         trainingGame.appendState(items, None)
