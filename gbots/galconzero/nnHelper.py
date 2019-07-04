@@ -13,7 +13,7 @@ from nnSetup import NUM_PLANETS, NUM_ACTIONS_PER_LAYER, NUM_FEATURES, NUM_OUTPUT
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto(
-    gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
+    gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
     # device_count = {'GPU': 1}
 )
 config.gpu_options.allow_growth = True
@@ -56,10 +56,10 @@ class NNHelper:
             if source.owner == playerN and source.ships > 0:
                 # TODO: is this good?
                 # prune bad actions but not always??
-                if nnOutput[index] > 0.001 or random.random() > 0.95:
+                if nnOutput[index] > 0.0005 or random.random() > 0.8:
                     # TODO: REMOVE THE 0.02 BIAS
                     actions.append(createSendAction(
-                        nnOutput[index] + 0.02, sourceN, targetN, 50))
+                        nnOutput[index] + random.random()*0.0005, sourceN, targetN, 50))
 
         # TODO: for now, just suppress all redirection.
         # for index in range(NUM_ACTIONS_PER_LAYER + 1, NUM_OUTPUTS):

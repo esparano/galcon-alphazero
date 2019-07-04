@@ -86,6 +86,7 @@ class mcts():
 
         assert node.actions == None, "node priors were attempted to be calculated twice"
         actions, stateEval = node.state.getPriorProbabilitiesAndEval()
+        random.shuffle(actions)  # TODO: IS THIS NECESSARY?
         node.actions = actions
         node.eval = stateEval
 
@@ -140,12 +141,12 @@ class mcts():
 
     # returns "best" child node
     def getPrincipalVariation(self, node):
-        for child in node.children.values():
-            pass
-            #log("child.n: {}".format(child.n))
+        # for child in node.children.values():
+            # log("child.n: {}".format(child.n))
 
         # If there are no actions, return null action
         if len(node.children.values()) == 0:
+            log("WARNING: no actions explored. returning null action")
             return self.getChildNode(node, createNullAction(1))
 
         # TODO: try c.q instead of c.n

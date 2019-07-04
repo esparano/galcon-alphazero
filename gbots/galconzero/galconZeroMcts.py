@@ -38,7 +38,7 @@ class GalconZeroMcts():
         self.trainingGame = TrainingGame()
 
     def getBestMove(self, g, iterationLimit=1000, evaluator=defaultEvaluator, saveTrainingData=True):
-        mctsSearch = mcts(iterationLimit=iterationLimit, explorationConstant=1)
+        mctsSearch = mcts(timeLimit=iterationLimit, explorationConstant=1)
 
         enemyN = getEnemyUserN(g)
         assert enemyN != g.you, "Enemy user was the same as bot user"

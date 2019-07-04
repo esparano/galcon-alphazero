@@ -1,1 +1,1 @@
-gbots.exe run-launcher
+activate galconzero && gbots.exe run-launcher
