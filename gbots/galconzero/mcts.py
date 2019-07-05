@@ -61,7 +61,9 @@ class mcts():
             for _ in range(self.searchLimit):
                 self.executeRound()
 
-        bestChild = self.getPrincipalVariation(self.root)
+        # exploratory play
+        # TODO: DISABLE FOR COMPETITIVE PLAY
+        bestChild = self.getPrincipalVariation(self.root, stochastic=True)
         return bestChild.prevAction, self.visited
 
     def executeRound(self):
@@ -116,9 +118,10 @@ class mcts():
 
         # This is extremely slow because it's called a lot of times... optimize this?
 
-        if (parent.n < 1):
+        if parent.n < 1:
             # TODO: leela uses 1 if parent.n is 0, I think
             assert parent.n > 0, "ERROR: NODE VISITS LESS THAN 1"
+
         factor = self.explorationConstant * optSqrt(parent.n)
 
         for action in parent.actions:
@@ -140,7 +143,7 @@ class mcts():
         return self.getChildNode(parent, bestAction)
 
     # returns "best" child node
-    def getPrincipalVariation(self, node):
+    def getPrincipalVariation(self, node, stochastic):
         # for child in node.children.values():
             # log("child.n: {}".format(child.n))
 
@@ -150,4 +153,13 @@ class mcts():
             return self.getChildNode(node, createNullAction(1))
 
         # TODO: try c.q instead of c.n
+        # choose move probabalistic for exploratory play
+        if stochastic:
+            probs = [c.n for c in node.children.values()]
+            total = sum(probs)
+            assert total > 0, 'TOTAL OF CHILD N WAS 0'
+
+            probs = [c/total for c in probs]
+            return max(node.children.values(), key=lambda c: c.n)
+
         return max(node.children.values(), key=lambda c: c.n)

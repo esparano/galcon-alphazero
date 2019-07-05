@@ -52,7 +52,8 @@ class GalconZeroMcts():
         currentNode = mctsSearch.root
         depth = 0
         while currentNode.children.values():
-            bestChild = mctsSearch.getPrincipalVariation(currentNode)
+            bestChild = mctsSearch.getPrincipalVariation(
+                currentNode, stochastic=False)
             # log(bestChild.prevAction)
 
             depth += 1

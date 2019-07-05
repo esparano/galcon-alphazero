@@ -46,7 +46,7 @@ class NNHelper:
     # TODO: interpret output as priors
     def getActionsFromNNOutput(self, nnOutput, trainingHelper, items, playerN):
         actions = []
-        actions.append(createNullAction(nnOutput[0]))
+        actions.append(createNullAction(nnOutput[0] + random.random()*0.1))
 
         for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
             sourceN, targetN = trainingHelper.indexToSourceTarget(index)
@@ -56,10 +56,10 @@ class NNHelper:
             if source.owner == playerN and source.ships > 0:
                 # TODO: is this good?
                 # prune bad actions but not always??
-                if nnOutput[index] > 0.0005 or random.random() > 0.8:
+                # if nnOutput[index] > 0.0005 or random.random() > 0.8:
                     # TODO: REMOVE THE 0.02 BIAS
-                    actions.append(createSendAction(
-                        nnOutput[index] + random.random()*0.0005, sourceN, targetN, 50))
+                actions.append(createSendAction(
+                    nnOutput[index] + random.random()*0.1, sourceN, targetN, 50))
 
         # TODO: for now, just suppress all redirection.
         # for index in range(NUM_ACTIONS_PER_LAYER + 1, NUM_OUTPUTS):

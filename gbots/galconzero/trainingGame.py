@@ -25,6 +25,5 @@ class TrainingGame():
     def saveGame(self, userN, result):
         self.userN = userN
         self.result = result
-        log("RESULT: {}".format(result))
         with open(DEFAULT_FILENAME.format(time.time(), userN), 'wb') as fp:
             pickle.dump(self, fp)
