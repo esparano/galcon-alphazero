@@ -32,6 +32,7 @@ class NNHelper:
         trainingGame.userN = playerN
         helper = TrainingHelper(trainingGame)
         nnInput = helper.getNNInputFromState(items)
+        # TODO: reuse np arrays instead of creating new ones, since NN input is fixed-size?
         nnInput = np.array([nnInput])
         return nnInput, helper
 

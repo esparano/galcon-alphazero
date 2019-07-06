@@ -17,8 +17,8 @@ def normalizeActions(actions):
 
 class NNEval:
 
-    def __init__(self):
-        self.nnHelper = NNHelper("galconzero/gz_dev.model")
+    def __init__(self, model='gz_dev.model'):
+        self.nnHelper = NNHelper("galconzero/" + model)
 
     def getPriorProbabilitiesAndEval(self, items, playerN, enemyN):
         priors, predictedEval = self.nnHelper.predict(items, playerN)

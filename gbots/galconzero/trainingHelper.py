@@ -3,6 +3,7 @@ import numpy as np
 
 from actions import SEND_ACTION, REDIRECT_ACTION
 from nnSetup import NUM_PLANETS, NUM_FEATURES, NUM_OUTPUTS
+from mapHelper import mapHelper
 
 # TODO: refactor this so it's more reusable in bot code
 
@@ -56,12 +57,15 @@ class TrainingHelper():
         return math.sqrt((p.x - f.x)**2 + (p.y - f.y)**2)
 
     def findClosestPlanetNToFleet(self, fleet):
-        return min(self.sortedPlanetIds, key=lambda n: self.getSortedPlanetIdDistToFleet(n, fleet))
+        # use gridding and caching to quickly get approximately closest planet
+        return mapHelper.queryClosestNPlanets(
+            round(fleet.x * 5) / 5, round(fleet.y * 5) / 5).n
 
     # TODO: unit test all of this. Lots of potential bugs.
     def getNNInputFromState(self, items):
         nnInput = []
         # add planet info
+        # TODO: reuse arrays instead of creating new ones??
         for n in self.sortedPlanetIds:
             p = items[n]
             # TODO: fleet related properties

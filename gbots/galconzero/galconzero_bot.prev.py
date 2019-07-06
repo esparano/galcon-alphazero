@@ -7,7 +7,7 @@ from commitAction import commitAction
 from nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-nnEval = NNEval()
+nnEval = NNEval('gz_dev.iter0.model')
 
 import cProfile
 
@@ -17,7 +17,7 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=500, evaluator=nnEval)
+        g, iterationLimit=200, evaluator=nnEval)
     commitAction(action)
 
 ################################################################################
@@ -135,5 +135,5 @@ def sync(g, t):
 
 
 if __name__ == "__main__":
-    cProfile.run('main()', "savedStats")
-    # main()
+    # cProfile.run('main()', "savedStats")
+    main()

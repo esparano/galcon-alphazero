@@ -8,6 +8,7 @@ from mcts import mcts
 from galconState import GalconState
 from evalAndMoveGen import EvalAndMoveGen
 from trainingGame import TrainingGame
+from mapHelper import mapHelper
 
 defaultEvaluator = EvalAndMoveGen()
 
@@ -34,10 +35,19 @@ def getRefinedProbs(root):
 
 
 class GalconZeroMcts():
+
     def __init__(self):
+        self.firstFrame = True
+
+    def firstFrameInit(self, g):
         self.trainingGame = TrainingGame()
+        mapHelper.setItems(g.items)
+        self.firstFrame = False
 
     def getBestMove(self, g, iterationLimit=1000, evaluator=defaultEvaluator, saveTrainingData=True):
+        if self.firstFrame:
+            self.firstFrameInit(g)
+
         mctsSearch = mcts(timeLimit=iterationLimit, explorationConstant=1)
 
         enemyN = getEnemyUserN(g)
@@ -72,4 +82,4 @@ class GalconZeroMcts():
 
     def reportGameOver(self, g, winner):
         self.trainingGame.saveGame(g.you, winner == g.you)
-        self.trainingGame = TrainingGame()
+        self.firstFrame = True
