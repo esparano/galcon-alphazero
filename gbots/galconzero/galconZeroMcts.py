@@ -48,7 +48,7 @@ class GalconZeroMcts():
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = mcts(timeLimit=iterationLimit, explorationConstant=1)
+        mctsSearch = mcts(iterationLimit=iterationLimit, explorationConstant=1)
 
         enemyN = getEnemyUserN(g)
         assert enemyN != g.you, "Enemy user was the same as bot user"
@@ -70,8 +70,9 @@ class GalconZeroMcts():
             currentNode = bestChild
         #log("END ACTION TREE")
 
-        log("nodes: {}, depth: {}, eval: {}".format(
-            numVisited, depth, mctsSearch.root.q))
+        # TODO: REENABLE THIS
+        # log("nodes: {}, depth: {}, eval: {}".format(
+        #     numVisited, depth, mctsSearch.root.q))
 
         if saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)

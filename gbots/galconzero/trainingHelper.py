@@ -4,8 +4,20 @@ import numpy as np
 from actions import SEND_ACTION, REDIRECT_ACTION
 from nnSetup import NUM_PLANETS, NUM_FEATURES, NUM_OUTPUTS
 from mapHelper import mapHelper
+from log import log
 
 # TODO: refactor this so it's more reusable in bot code
+
+from functools import lru_cache
+
+
+@lru_cache(maxsize=8192)
+def indexToSourceTargetN(index):
+    source = int((index - 1) / (NUM_PLANETS - 1))
+    target = (index - 1) % (NUM_PLANETS - 1)
+    if target >= source:
+        target += 1
+    return source, target
 
 
 class TrainingHelper():
@@ -16,7 +28,7 @@ class TrainingHelper():
         sortedPlanets = self.getPlanetsSorted(self.trainingGame.states[0])
         self.planetIdToSortedIdMap = {
             p.n: i for i, p in enumerate(sortedPlanets)}
-        self.sortedPlanetIds = [p.n for p in sortedPlanets]
+        self.sortedPlanets = [p for p in sortedPlanets]
 
     # sort by, for example, x value or prod? so that similar planets are always put into each node slot
     def getPlanetsSorted(self, items):
@@ -44,11 +56,8 @@ class TrainingHelper():
         return 1 + source * (NUM_PLANETS - 1) + (target if target < source else target - 1)
 
     def indexToSourceTarget(self, index):
-        source = int((index - 1) / (NUM_PLANETS - 1))
-        target = (index - 1) % (NUM_PLANETS - 1)
-        if target >= source:
-            target += 1
-        return self.sortedPlanetIds[source], self.sortedPlanetIds[target]
+        sourceIndex, targetIndex = indexToSourceTargetN(index)
+        return self.sortedPlanets[sourceIndex], self.sortedPlanets[targetIndex]
 
     # TODO: use KD trees to speed up nearest neighbor searches.
     def getSortedPlanetIdDistToFleet(self, n, f):
@@ -66,17 +75,28 @@ class TrainingHelper():
         nnInput = []
         # add planet info
         # TODO: reuse arrays instead of creating new ones??
-        for n in self.sortedPlanetIds:
-            p = items[n]
+        for _p in self.sortedPlanets:
+            p = items[_p.n]
             # TODO: fleet related properties
-            friendly = 1 if p.owner == self.trainingGame.userN else 0
-            neutral = 1 if p.neutral else 0
-            enemy = 1 if friendly == neutral else 0
-            assert friendly + neutral + enemy == 1, 'planet ownership not properly identified'
+            friendly = p.owner == self.trainingGame.userN
+            neutral = p.neutral
+            enemy = friendly == neutral
+            assert int(friendly) + int(neutral) + \
+                int(enemy) == 1, 'planet ownership not properly identified'
+
+            # log("p.owner: {}, user: {}, friendly: {}, neutral:{}, enemy: {}".format(
+            #     p.owner, self.trainingGame.userN, friendly, neutral, enemy))
+
+            friendlyProd = p.production if friendly else 0
+            enemyProd = p.production if enemy else 0
+            neutralProd = p.production if neutral else 0
+            friendlyShips = p.ships if friendly else 0
+            enemyShips = p.ships if enemy else 0
+            neutralShips = p.ships if neutral else 0
 
             # TODO: normalize data
-            thisNodeData = [p.production, p.radius, p.ships,
-                            friendly, enemy, neutral, p.x, p.y, 0, 0, 0, 0, 0, 0]
+            thisNodeData = [friendlyProd, enemyProd, neutralProd, friendlyShips,
+                            enemyShips, neutralShips, p.radius, p.x, p.y, 0, 0, 0, 0, 0, 0]
             nnInput.append(thisNodeData)
 
         # add fleet info
@@ -87,13 +107,13 @@ class TrainingHelper():
                 offset = 0 if f.owner == self.trainingGame.userN else 3
 
                 row = nnInput[sortedPlanetId]
-                numShipsBefore = row[8 + offset]
+                numShipsBefore = row[9 + offset]
                 assert not math.isclose(f.ships, 0)
-                row[8 + offset] += f.ships
-                row[9 + offset] = (row[9 + offset] * numShipsBefore +
-                                   f.x * f.ships) / row[8 + offset]
-                row[10 + offset] = (row[10 + offset] *
-                                    numShipsBefore + f.y * f.ships) / row[8 + offset]
+                row[9 + offset] += f.ships
+                row[10 + offset] = (row[10 + offset] * numShipsBefore +
+                                    f.x * f.ships) / row[9 + offset]
+                row[11 + offset] = (row[11 + offset] *
+                                    numShipsBefore + f.y * f.ships) / row[9 + offset]
 
         return nnInput
 

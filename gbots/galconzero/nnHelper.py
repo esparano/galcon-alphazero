@@ -23,6 +23,7 @@ set_session(session)
 
 class NNHelper:
     def __init__(self, modelFileName):
+        # TODO: load this BEFORE beginning of game so TF startup time doesn't cause bot to miss the first few ticks
         self.model = load_model(modelFileName)
 
     # TODO: THIS IS A TEMPORARY HACK TO GET AROUND LIMITATIONS
@@ -47,20 +48,19 @@ class NNHelper:
     # TODO: interpret output as priors
     def getActionsFromNNOutput(self, nnOutput, trainingHelper, items, playerN):
         actions = []
+        # TODO: remove this fudge factor to make all moves somewhat likely
         actions.append(createNullAction(nnOutput[0] + random.random()*0.1))
 
         for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
-            sourceN, targetN = trainingHelper.indexToSourceTarget(index)
-            assert(sourceN != targetN)
-
-            source = items[sourceN]
+            source, target = trainingHelper.indexToSourceTarget(index)
+            # assert source.n != target.n
             if source.owner == playerN and source.ships > 0:
                 # TODO: is this good?
                 # prune bad actions but not always??
                 # if nnOutput[index] > 0.0005 or random.random() > 0.8:
                     # TODO: REMOVE THE 0.02 BIAS
                 actions.append(createSendAction(
-                    nnOutput[index] + random.random()*0.1, sourceN, targetN, 50))
+                    nnOutput[index] + random.random()*0.1, source.n, target.n, 50))
 
         # TODO: for now, just suppress all redirection.
         # for index in range(NUM_ACTIONS_PER_LAYER + 1, NUM_OUTPUTS):
