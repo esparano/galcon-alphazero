@@ -44,11 +44,12 @@ class GalconZeroMcts():
         mapHelper.setItems(g.items)
         self.firstFrame = False
 
-    def getBestMove(self, g, iterationLimit=1000, evaluator=defaultEvaluator, saveTrainingData=True):
+    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=defaultEvaluator, saveTrainingData=True):
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = mcts(iterationLimit=iterationLimit, explorationConstant=1)
+        mctsSearch = mcts(timeLimit=timeLimit,
+                          iterationLimit=iterationLimit, explorationConstant=1)
 
         enemyN = getEnemyUserN(g)
         assert enemyN != g.you, "Enemy user was the same as bot user"
@@ -71,8 +72,8 @@ class GalconZeroMcts():
         #log("END ACTION TREE")
 
         # TODO: REENABLE THIS
-        # log("nodes: {}, depth: {}, eval: {}".format(
-        #     numVisited, depth, mctsSearch.root.q))
+        log("nodes: {}, depth: {}, eval: {:.2f}".format(
+            numVisited, depth, mctsSearch.root.q))
 
         if saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)

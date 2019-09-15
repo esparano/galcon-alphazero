@@ -43,7 +43,7 @@ class NNHelper:
     def predict(self, items, playerN):
         nnInput, helper = self.getNNInput(items, playerN)
         actions, stateEval = self.model.predict(nnInput)
-        return self.getActionsFromNNOutput(actions[0], helper, items, playerN), stateEval[0]
+        return self.getActionsFromNNOutput(actions[0], helper, items, playerN), stateEval[0][0]
 
     # TODO: interpret output as priors
     def getActionsFromNNOutput(self, nnOutput, trainingHelper, items, playerN):

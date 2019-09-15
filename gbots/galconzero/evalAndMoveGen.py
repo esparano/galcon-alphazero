@@ -57,8 +57,8 @@ class EvalAndMoveGen:
 
     def getPriorProbabilitiesAndEval(self, items, playerN, enemyN):
         # + testFleetActions(items, playerN, enemyN)
-        actions = testPlanetActions(
-            items, playerN, enemyN) + [createNullAction(0.05)]
+        # actions = testPlanetActions(
+        #     items, playerN, enemyN) + [createNullAction(0.05)]
         actions = normalizeActions(actions)
         return actions, self.getEval(items, playerN, enemyN)
         # return [createNullAction(0.4), createNullAction(0.25), createNullAction(0.25)] + \

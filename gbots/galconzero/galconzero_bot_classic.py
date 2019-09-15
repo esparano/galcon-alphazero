@@ -4,10 +4,10 @@ from galconZeroMcts import GalconZeroMcts
 from models import Galaxy, Item
 from log import send, log
 from commitAction import commitAction
-from nnEval import NNEval
+from classicCopyEval import ClassicCopyEval
 
 galconZeroMcts = GalconZeroMcts()
-nnEval = NNEval()
+evaluator = ClassicCopyEval()
 
 import cProfile
 
@@ -17,7 +17,7 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=200, evaluator=nnEval)
+        g, iterationLimit=2, evaluator=evaluator)
     commitAction(action)
 
 ################################################################################

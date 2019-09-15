@@ -93,11 +93,13 @@ class mcts():
         node.eval = stateEval
 
     def backpropagate(self, node, reward):
+        r = reward
         while node is not None:
             node.n += 1
-            node.totalReward += reward
+            node.totalReward += r
             node.q = node.totalReward / node.n
             node = node.parent
+            r *= -1
 
     def getChildNode(self, node, action):
         assert action is not None, "ERROR: action was None"

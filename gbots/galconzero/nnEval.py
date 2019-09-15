@@ -23,4 +23,5 @@ class NNEval:
     def getPriorProbabilitiesAndEval(self, items, playerN, enemyN):
         priors, predictedEval = self.nnHelper.predict(items, playerN)
         priors = normalizeActions(priors)
-        return (priors, predictedEval)
+        # put eval into range [-1,1]
+        return (priors, 2 * predictedEval - 1)
