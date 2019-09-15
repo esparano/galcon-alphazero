@@ -3,8 +3,8 @@ from log import log
 from gz_mathutils import getVectorComponents, angle
 from models import Item
 from stateSim import simulate
-from actions import SEND_ACTION, REDIRECT_ACTION, NULL_ACTION
-
+from actions import SendAction, RedirectAction, NullAction
+from nnSetup import NUM_ACTIONS_PER_LAYER
 
 NEW_FLEET_N = 10000
 
@@ -12,35 +12,41 @@ NEW_FLEET_N = 10000
 class GalconState():
 
     # actionGen and evaluator are injected
-    def __init__(self, items, playerN, enemyN, evaluator):
+    def __init__(self, items, playerN, enemyN, mapHelper):
         self.items = items
         self.playerN = playerN
         self.enemyN = enemyN
-        self.evaluator = evaluator
+        self.mapHelper = mapHelper
         # TODO: expand and calculate both reward and possible actions simultaneously?
         # Then mark node as expanded and store results
 
-    def getPriorProbabilitiesAndEval(self):
-        actions, stateEval = self.evaluator.getPriorProbabilitiesAndEval(
-            self.items, self.playerN, self.enemyN)
+    def mapActionIndexToAction(self, actionIndex):
+        if actionIndex == 0:
+            return NullAction()
+        elif actionIndex <= NUM_ACTIONS_PER_LAYER:
+            source, target = self.mapHelper.indexToSourceTarget(actionIndex)
+            return SendAction(source.n, target.n, 50)
+        else:
+            assert False, "Redirect is not yet supported"
+            # newState.executeRedirect(action)
 
-        #  TODO: remove
-        priorsSum = sum(action[0] for action in actions)
-        assert math.isclose(priorsSum, 1), "prior probabilities sum {} != 1.".format(
-            priorsSum)
-        return actions, stateEval
-
-    def takeAction(self, action):
+    def takeAction(self, actionIndex):
         # TODO: this can be heavily optimized. a map object could store static data like planet x,y,prod, and nodes
         # could contain deltas from parent states instead of an entirely new copy of the map?
         itemDictCopy = {k: self.items[k].getCopy() for k in self.items}
         newState = GalconState(itemDictCopy, self.enemyN,
-                               self.playerN, self.evaluator)
+                               self.playerN, self.mapHelper)
 
-        if action[1] == SEND_ACTION:
-            newState.executeSend(action)
-        elif action[1] == REDIRECT_ACTION:
-            newState.executeRedirect(action)
+        chosenAction = self.mapActionIndexToAction(actionIndex)
+        # TODO: FIX THIS RUNTIME ERROR using mapHelper
+        if isinstance(chosenAction, NullAction):
+            # null action
+            pass
+        elif isinstance(chosenAction, SendAction):
+            newState.executeSend(chosenAction)
+        else:
+            assert False, "Redirect is not yet supported"
+            # newState.executeRedirect(action)
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
@@ -50,9 +56,9 @@ class GalconState():
 
     # TODO: test this
     def executeSend(self, sendAction):
-        (_, _, sourceN, targetN, perc) = sendAction
-        source = self.items[sourceN]
-        target = self.items[targetN]
+        source = self.items[sendAction.sourceN]
+        target = self.items[sendAction.targetN]
+        perc = sendAction.percent
 
         # TODO: min 1 ship, rounding? etc.
         numToSend = source.ships * perc / 100
@@ -75,8 +81,8 @@ class GalconState():
             ships=numToSend,
             x=source.x + xSpawnOffset,
             y=source.y + ySpawnOffset,
-            source=sourceN,
-            target=targetN,
+            source=source.n,
+            target=target.n,
             radius=5,  # TODO: fleet radius estimation/update
             xid=NEW_FLEET_N,  # TODO: what is this?
         )
@@ -89,9 +95,8 @@ class GalconState():
 
     # TODO: test this
     def executeRedirect(self, redirectAction):
-        (_, _, sourceN, targetN) = redirectAction
-        source = self.items[sourceN]
-        source.target = targetN
+        fleet = self.items[redirectAction.sourceN]
+        fleet.target = redirectAction.targetN
 
     # TODO: calculate terminal states
     # It's possible that trying to determine terminal states will just cost more time than a search?

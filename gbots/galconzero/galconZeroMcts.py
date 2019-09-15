@@ -1,16 +1,15 @@
 from copy import deepcopy
+import numpy as np
 
 from log import log
 from copy import deepcopy
 import math
 
-from mcts import mcts
-from galconState import GalconState
-from evalAndMoveGen import EvalAndMoveGen
+from mcts2 import mcts
 from trainingGame import TrainingGame
-from mapHelper import mapHelper
-
-defaultEvaluator = EvalAndMoveGen()
+from mapHelper import MapHelper
+from galconState import GalconState
+from nnSetup import NUM_OUTPUTS
 
 
 def getEnemyUserN(g):
@@ -34,6 +33,14 @@ def getRefinedProbs(root):
     return refinedProbs
 
 
+class DummyEvaluator():
+    def evaluate(self, state):
+        return np.random.random([NUM_OUTPUTS]), np.random.random()
+
+
+dummyEvaluator = DummyEvaluator()
+
+
 class GalconZeroMcts():
 
     def __init__(self):
@@ -41,44 +48,47 @@ class GalconZeroMcts():
 
     def firstFrameInit(self, g):
         self.trainingGame = TrainingGame()
-        mapHelper.setItems(g.items)
+        self.mapHelper = MapHelper(g.items)
         self.firstFrame = False
 
-    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=defaultEvaluator, saveTrainingData=True):
+    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, saveTrainingData=True):
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = mcts(timeLimit=timeLimit,
+        mctsSearch = mcts(evaluator, timeLimit=timeLimit,
                           iterationLimit=iterationLimit, explorationConstant=1)
 
         enemyN = getEnemyUserN(g)
         assert enemyN != g.you, "Enemy user was the same as bot user"
 
-        state = GalconState(g.items, g.you, enemyN, evaluator)
-
-        chosenAction, numVisited = mctsSearch.search(state)
+        state = GalconState(g.items, g.you, enemyN, self.mapHelper)
+        chosenActionIndex, numVisited = mctsSearch.search(state)
+        chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         # for testing, print out sequences of moves
-        #log("ACTION TREE:")
-        currentNode = mctsSearch.root
-        depth = 0
-        while currentNode.children.values():
-            bestChild = mctsSearch.getPrincipalVariation(
-                currentNode, stochastic=False)
-            # log(bestChild.prevAction)
+        # log("ACTION TREE:")
+        # currentNode = mctsSearch.root
+        # depth = 0
+        # while currentNode.children.values():
+        #     bestChild = mctsSearch.getPrincipalVariation(
+        #         currentNode, stochastic=False)
+        #     log(bestChild)
+        #     # log(bestChild.prevAction)
 
-            depth += 1
-            currentNode = bestChild
-        #log("END ACTION TREE")
+        #     depth += 1
+        #     currentNode = bestChild
+        # log("END ACTION TREE")
 
         # TODO: REENABLE THIS
+        # TODO: calculate depth
         log("nodes: {}, depth: {}, eval: {:.2f}".format(
-            numVisited, depth, mctsSearch.root.q))
+            numVisited, 0, mctsSearch.root.child_Q()[chosenActionIndex]))
 
-        if saveTrainingData:
+        if False:  # saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)
             if refinedProbs is not None:
-                self.trainingGame.appendState(deepcopy(g.items), refinedProbs)
+                # TODO: is it necessary to copy state?
+                self.trainingGame.appendState(deepcopy(state), refinedProbs)
 
         return chosenAction
 

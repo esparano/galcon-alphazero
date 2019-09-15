@@ -7,7 +7,7 @@ from commitAction import commitAction
 from nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-nnEval = NNEval('gz_dev.iter0.model')
+nnEval = NNEval()
 
 import cProfile
 

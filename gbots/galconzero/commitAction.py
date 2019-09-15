@@ -3,9 +3,8 @@ from actions import SEND_ACTION, REDIRECT_ACTION
 
 
 def commitAction(action):
-    if action[1] == SEND_ACTION:
-        (_, _, source, target, perc) = action
-        send("/SEND {} {} {}\n".format(perc, source, target))
-    elif action[1] == REDIRECT_ACTION:
-        (_, _, source, target) = action
-        send("/REDIR {} {}\n".format(source, target))
+    if action.actionType == SEND_ACTION:
+        send("/SEND {} {} {}\n".format(action.percent,
+                                       action.sourceN, action.targetN))
+    elif action.actionType == REDIRECT_ACTION:
+        send("/REDIR {} {}\n".format(action.sourceN, action.targetN))

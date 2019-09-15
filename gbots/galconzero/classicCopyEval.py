@@ -1,8 +1,9 @@
 import random
+import numpy as np
+
 from log import log
-from actions import createSendAction, createRedirectAction, createNullAction
 from gz_mathutils import dist
-from mapHelper import mapHelper
+from nnSetup import NUM_OUTPUTS
 
 
 def rateSourcePlanet(source, playerN):
@@ -20,10 +21,12 @@ def rateTargetPlanet(source, target, playerN):
 
 
 def replacementPriors(items, playerN, enemyN):
+    outputs = np.zeros([NUM_OUTPUTS], dtype=np.float32)
     planets = mapHelper.planets
     source = max(planets, key=lambda p: rateSourcePlanet(p, playerN))
     target = max(planets, key=lambda p: rateTargetPlanet(source, p, playerN))
-    return [createSendAction(1, source.n, target.n, 50)]
+    # TODO: fix this. Doesn't work at all anymore
+    return [source.n, target.n]
 
 
 class ClassicCopyEval:
