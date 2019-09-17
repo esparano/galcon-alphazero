@@ -9,7 +9,7 @@ from mcts2 import mcts
 from trainingGame import TrainingGame
 from mapHelper import MapHelper
 from galconState import GalconState
-from nnSetup import NUM_OUTPUTS
+from nnSetup import NUM_OUTPUTS, NUM_ACTIONS_PER_LAYER
 
 
 def getEnemyUserN(g):
@@ -35,7 +35,9 @@ def getRefinedProbs(root):
 
 class DummyEvaluator():
     def evaluate(self, state):
-        return np.random.random([NUM_OUTPUTS]), np.random.random()
+        priors = np.random.random([NUM_OUTPUTS])
+        priors[NUM_OUTPUTS - NUM_ACTIONS_PER_LAYER:] = 0
+        return priors, np.random.random()
 
 
 dummyEvaluator = DummyEvaluator()

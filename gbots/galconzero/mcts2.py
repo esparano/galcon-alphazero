@@ -57,14 +57,26 @@ class UCTNode():
 
     def select_leaf(self):
         current = self
+        current.number_visits += 1
+        current.total_value -= 1
         while current.is_expanded:
+            # Virtual losses
+            # TODO: deal with case where same leaf gets chosen twice in a batch
             best_move = current.best_child()
             current = current.maybe_add_child(best_move)
+            current.number_visits += 1
+            current.total_value -= 1
         return current
 
     def expand(self, child_priors):
+        # If a node was picked multiple times (despite vlosses), we shouldn't
+        # expand it more than once.
+        if self.is_expanded:
+            return
         self.is_expanded = True
+
         self.child_priors = child_priors
+        # TODO: Q seeding (see incorporate_results in mcts.py, or Leela for examples)
 
     def maybe_add_child(self, move):
         if move not in self.children:
@@ -76,8 +88,7 @@ class UCTNode():
         current = self
         perspective_value = value_estimate
         while current.parent is not None:
-            current.number_visits += 1
-            current.total_value += perspective_value
+            current.total_value += perspective_value + 1
             current = current.parent
             # switch perspective (eval for next player is negative of eval for current playet)
             perspective_value *= -1
