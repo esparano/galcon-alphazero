@@ -24,9 +24,6 @@ def getNNInputFromState(gameState):
         assert int(friendly) + int(neutral) + \
             int(enemy) == 1, 'planet ownership not properly identified'
 
-        # log("p.owner: {}, user: {}, friendly: {}, neutral:{}, enemy: {}".format(
-        #     p.owner, self.trainingGame.userN, friendly, neutral, enemy))
-
         friendlyProd = p.production if friendly else 0
         enemyProd = p.production if enemy else 0
         neutralProd = p.production if neutral else 0

@@ -12,11 +12,6 @@ from nnSetup import NUM_OUTPUTS
 from functools import lru_cache
 
 
-@lru_cache(maxsize=131072)
-def optSqrt(n):
-    return math.sqrt(n)
-
-
 class UCTNode():
     def __init__(self, state, move, parent=None):
         self.state = state
@@ -50,8 +45,12 @@ class UCTNode():
         return self.child_total_value / (1 + self.child_number_visits)
 
     def child_U(self):
-        return math.sqrt(self.number_visits) * (
-            self.child_priors / (1 + self.child_number_visits))
+        # return very low number to never choose illegal moves which are marked by special value '0'
+        # (0 shouldn't normally be output by NN)
+        return np.where(self.child_priors > 0,
+                        np.sqrt(self.number_visits) * (
+                            self.child_priors / (1 + self.child_number_visits)),
+                        -1000000)
 
     def best_child(self):
         return np.argmax(self.child_Q() + self.child_U())
