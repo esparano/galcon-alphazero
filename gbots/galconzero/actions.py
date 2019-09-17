@@ -16,6 +16,10 @@ class SendAction(Action):
         self.targetN = targetN
         self.percent = percent
 
+    def __str__(self):
+        return "SEND from {} to {} at {}%".format(
+            self.sourceN, self.targetN, self.percent)
+
 
 class RedirectAction(Action):
     def __init__(self, sourceN, targetN):
@@ -23,7 +27,14 @@ class RedirectAction(Action):
         self.sourceN = sourceN
         self.targetN = targetN
 
+    def __str__(self):
+        return "REDIRECT fleet {} to {}".format(
+            self.sourceN, self.targetN)
+
 
 class NullAction(Action):
     def __init__(self):
         self.actionType = NULL_ACTION
+
+    def __str__(self):
+        return "PASS"

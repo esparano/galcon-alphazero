@@ -65,24 +65,7 @@ class GalconZeroMcts():
         chosenActionIndex, numVisited = mctsSearch.search(state)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
-        # for testing, print out sequences of moves
-        # log("ACTION TREE:")
-        # currentNode = mctsSearch.root
-        # depth = 0
-        # while currentNode.children.values():
-        #     bestChild = mctsSearch.getPrincipalVariation(
-        #         currentNode, stochastic=False)
-        #     log(bestChild)
-        #     # log(bestChild.prevAction)
-
-        #     depth += 1
-        #     currentNode = bestChild
-        # log("END ACTION TREE")
-
-        # TODO: REENABLE THIS
-        # TODO: calculate depth
-        log("nodes: {}, depth: {}, eval: {:.2f}".format(
-            numVisited, 0, mctsSearch.root.child_Q()[chosenActionIndex]))
+        self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
 
         if False:  # saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)
@@ -91,6 +74,30 @@ class GalconZeroMcts():
                 self.trainingGame.appendState(deepcopy(state), refinedProbs)
 
         return chosenAction
+
+    def printResults(self, chosenActionIndex, numVisited, mctsSearch, verbose=False):
+        if verbose:
+            log("ACTION TREE:")
+
+        currentNode = mctsSearch.root
+        depth = 0
+        while currentNode.children.values():
+            bestChildIndex = mctsSearch.getPrincipalVariation(
+                currentNode, stochastic=False)
+
+            if verbose:
+                action = mctsSearch.root.state.mapActionIndexToAction(
+                    bestChildIndex)
+                if depth % 2 == 0:
+                    log("Bot: {}".format(str(action)))
+                else:
+                    log("Enemy: {}".format(str(action)))
+
+            depth += 1
+            currentNode = currentNode.children[bestChildIndex]
+
+        log("nodes: {}, depth: {}, eval: {:.2f}".format(
+            numVisited, depth, mctsSearch.root.child_Q()[chosenActionIndex]))
 
     def reportGameOver(self, g, winner):
         self.trainingGame.saveGame(g.you, winner == g.you)
