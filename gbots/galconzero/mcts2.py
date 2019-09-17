@@ -28,7 +28,7 @@ class UCTNode():
         self.child_total_value = np.zeros(
             [NUM_OUTPUTS], dtype=np.float32)
         self.child_number_visits = np.zeros(
-            [NUM_OUTPUTS], dtype=np.float32)
+            [NUM_OUTPUTS], dtype=np.int32)
 
     @property
     def number_visits(self):
@@ -88,7 +88,7 @@ class DummyNode(object):
     def __init__(self):
         self.parent = None
         self.child_total_value = collections.defaultdict(float)
-        self.child_number_visits = collections.defaultdict(float)
+        self.child_number_visits = collections.defaultdict(int)
 
 
 class mcts():
@@ -116,7 +116,6 @@ class mcts():
     def search(self, initialState):
         self.root = UCTNode(initialState, move=None, parent=DummyNode())
 
-        self.visited = 0
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000
             while time.time() < timeLimit:
@@ -146,4 +145,4 @@ class mcts():
     # returns "best" child node
     # TODO: if stochastic is true, select probabilistically
     def getPrincipalVariation(self, node, stochastic):
-        return np.argmax(self.root.child_number_visits)
+        return np.argmax(node.child_number_visits)
