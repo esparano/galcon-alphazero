@@ -60,14 +60,23 @@ class NNEval:
 
     # Adds randomness and removes illegal moves
     # TODO: separate randomness-adding and illegal-move-pruning into two different functions
-    # TODO: proper randomnessInjectionIForgetTheName
+    # TODO: proper Dirichlet noise
     def cleanNNOutput(self, nnOutput, gameState):
-        nnOutput[0] += random.random()*0.1
+        # make sure even if there are no legal moves, NULL-move is still an option.
+        nnOutput[0] += 0.000001
+        # nnOutput[0] += random.random()*0.1
         for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
-            source, target = gameState.mapHelper.indexToSourceTarget(index)
-            # assert source.n != target.n
-            if source.owner == gameState.playerN and source.ships > 0:
-                nnOutput[index] += random.random()*0.1
+            firstFrameSource, firstFrameTarget = gameState.mapHelper.indexToSourceTarget(
+                index)
+
+            source = gameState.items[firstFrameSource.n]
+            target = gameState.items[firstFrameTarget.n]
+            assert source.n != target.n
+
+            # min 1 ship to send, and /100 because of NN input/output scaling
+            if source.owner == gameState.playerN and source.ships >= 0.01:
+                # nnOutput[index] += random.random()*0.1
+                pass
             else:
                 nnOutput[index] = 0
 
