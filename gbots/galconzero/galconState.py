@@ -61,7 +61,7 @@ class GalconState():
         perc = sendAction.percent
 
         # TODO: min 1 ship, rounding? etc.
-        numToSend = source.ships * perc / 100
+        numToSend = source.ships * (perc / 100)
         if (numToSend > source.ships):
             log("WARNING: attempting to send {} when planet has {}".format(
                 numToSend, source.ships))
@@ -83,8 +83,7 @@ class GalconState():
             y=source.y + ySpawnOffset,
             source=source.n,
             target=target.n,
-            radius=5,  # TODO: fleet radius estimation/update
-            xid=NEW_FLEET_N,  # TODO: what is this?
+            radius=5/100  # TODO: fleet radius estimation/update
         )
 
         # TODO: make sure this doesn't overwrite an object?

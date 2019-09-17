@@ -17,7 +17,7 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=200, evaluator=nnEval)
+        g, timeLimit=100, evaluator=nnEval)
     commitAction(action)
 
 ################################################################################
@@ -135,5 +135,5 @@ def sync(g, t):
 
 
 if __name__ == "__main__":
-    cProfile.run('main()', "savedStats")
-    # main()
+    # cProfile.run('main()', "savedStats")
+    main()
