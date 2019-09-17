@@ -97,7 +97,7 @@ class GalconZeroMcts():
             currentNode = currentNode.children[bestChildIndex]
 
         log("nodes: {}, depth: {}, eval: {:.2f}".format(
-            numVisited, depth, mctsSearch.root.child_Q()[chosenActionIndex]))
+            numVisited, depth, mctsSearch.root.total_value / mctsSearch.root.number_visits))
 
     def reportGameOver(self, g, winner):
         self.trainingGame.saveGame(g.you, winner == g.you)
