@@ -3,16 +3,38 @@ REDIRECT_ACTION = "REDIR"
 NULL_ACTION = "NULL"
 
 
-def createSendAction(priorProb, source, target, percent):
-    return (priorProb, SEND_ACTION, source, target, percent)
+# TODO: clean up inheritance structure
+class Action:
+    def __init__(self):
+        pass
 
 
-def createRedirectAction(priorProb, source, target):
-    return (priorProb, REDIRECT_ACTION, source, target)
+class SendAction(Action):
+    def __init__(self, sourceN, targetN, percent):
+        self.actionType = SEND_ACTION
+        self.sourceN = sourceN
+        self.targetN = targetN
+        self.percent = percent
+
+    def __str__(self):
+        return "SEND from {} to {} at {}%".format(
+            self.sourceN, self.targetN, self.percent)
 
 
-import random
+class RedirectAction(Action):
+    def __init__(self, sourceN, targetN):
+        self.actionType = REDIRECT_ACTION
+        self.sourceN = sourceN
+        self.targetN = targetN
+
+    def __str__(self):
+        return "REDIRECT fleet {} to {}".format(
+            self.sourceN, self.targetN)
 
 
-def createNullAction(priorProb):
-    return (priorProb, NULL_ACTION)  # , int(random.random() * 1000))
+class NullAction(Action):
+    def __init__(self):
+        self.actionType = NULL_ACTION
+
+    def __str__(self):
+        return "PASS"
