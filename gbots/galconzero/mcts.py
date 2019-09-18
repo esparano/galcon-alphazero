@@ -3,34 +3,109 @@ from __future__ import division
 import time
 import math
 import random
+import collections
+import numpy as np
 
 from log import log
-from actions import createNullAction
+from nnSetup import NUM_OUTPUTS
 
 from functools import lru_cache
 
 
-@lru_cache(maxsize=131072)
-def optSqrt(n):
-    return math.sqrt(n)
-
-
-class treeNode():
-    def __init__(self, state, parent=None, prevAction=None):
+class UCTNode():
+    def __init__(self, state, move, parent=None):
         self.state = state
-        self.isTerminal = state.isTerminal()
-        self.parent = parent
-        self.prevAction = prevAction
-        self.n = 0
-        self.totalReward = 0
-        self.q = 0
-        self.children = {}
-        self.actions = None
-        self.isExpanded = False
+        self.move = move
+        self.is_expanded = False
+        self.parent = parent  # Optional[UCTNode]
+        self.children = {}  # Dict[move, UCTNode]
+        self.child_priors = np.zeros([NUM_OUTPUTS], dtype=np.float32)
+        self.child_total_value = np.zeros(
+            [NUM_OUTPUTS], dtype=np.float32)
+        self.child_number_visits = np.zeros(
+            [NUM_OUTPUTS], dtype=np.int32)
+
+    @property
+    def number_visits(self):
+        return self.parent.child_number_visits[self.move]
+
+    @number_visits.setter
+    def number_visits(self, value):
+        self.parent.child_number_visits[self.move] = value
+
+    @property
+    def total_value(self):
+        return self.parent.child_total_value[self.move]
+
+    @total_value.setter
+    def total_value(self, value):
+        self.parent.child_total_value[self.move] = value
+
+    def child_Q(self):
+        return self.child_total_value / (1 + self.child_number_visits)
+
+    def child_U(self):
+        # return very low number to never choose illegal moves which are marked by special value '0'
+        # (0 shouldn't normally be output by NN)
+        return np.where(self.child_priors > 0,
+                        np.sqrt(self.number_visits) * (
+                            self.child_priors / (1 + self.child_number_visits)),
+                        -1000000)
+
+    def best_child(self):
+        return np.argmax(self.child_Q() + self.child_U())
+
+    def select_leaf(self):
+        current = self
+        current.number_visits += 1
+        current.total_value -= 1
+        while current.is_expanded:
+            # Virtual losses
+            # TODO: deal with case where same leaf gets chosen twice in a batch
+            best_move = current.best_child()
+            current = current.maybe_add_child(best_move)
+            current.number_visits += 1
+            current.total_value -= 1
+        return current
+
+    def expand(self, child_priors):
+        # If a node was picked multiple times (despite vlosses), we shouldn't
+        # expand it more than once.
+        if self.is_expanded:
+            return
+        self.is_expanded = True
+
+        self.child_priors = child_priors
+        # TODO: Q seeding (see incorporate_results in mcts.py, or Leela for examples)
+
+    def maybe_add_child(self, move):
+        if move not in self.children:
+            self.children[move] = UCTNode(
+                self.state.takeAction(move), move, parent=self)
+        return self.children[move]
+
+    def backup(self, value_estimate: float):
+        current = self
+        perspective_value = value_estimate
+        while current.parent is not None:
+            current.total_value += perspective_value + 1
+            current = current.parent
+            # switch perspective (eval for next player is negative of eval for current playet)
+            perspective_value *= -1
+
+
+class DummyNode(object):
+    def __init__(self):
+        self.parent = None
+        self.child_total_value = collections.defaultdict(float)
+        self.child_number_visits = collections.defaultdict(int)
 
 
 class mcts():
-    def __init__(self, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
+    def __init__(self, evaluator, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
+        self.evaluator = evaluator
+        self.explorationConstant = explorationConstant
+
         if timeLimit != None:
             if iterationLimit != None:
                 raise ValueError(
@@ -47,66 +122,42 @@ class mcts():
                 raise ValueError("Iteration limit must be greater than one")
             self.searchLimit = iterationLimit
             self.limitType = 'iterations'
-        self.explorationConstant = explorationConstant
 
-    def search(self, initialState):
-        self.root = treeNode(initialState)
+    def search(self, initialState, batchSize):
+        self.root = UCTNode(initialState, move=None, parent=DummyNode())
 
-        self.visited = 0
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000
             while time.time() < timeLimit:
-                self.executeRound()
+                self.executeBatchRound(batchSize)
         else:
             for _ in range(self.searchLimit):
-                self.executeRound()
+                self.executeBatchRound(batchSize)
 
         # exploratory play
         # TODO: DISABLE FOR COMPETITIVE PLAY
-        bestChild = self.getPrincipalVariation(self.root, stochastic=True)
-        return bestChild.prevAction, self.visited
+        bestAction = self.getPrincipalVariation(self.root, stochastic=True)
+        return bestAction, self.root.number_visits
 
-    def executeRound(self):
-        node = self.selectNode(self.root)
-        self.backpropagate(node, node.eval)
-        self.visited += 1
+    def executeSingleRound(self):
+        leaf = self.root.select_leaf()
+        child_priors, value_estimate = self.evaluator.evaluate(leaf.state)
+        leaf.expand(child_priors)
+        leaf.backup(value_estimate)
 
-    # get best child of node until terminal or unexpanded node is found
-    def selectNode(self, node):
-        # TODO: maybe mark nodes as terminal?
-        # If terminal node is selected, don't attempt to expand
-        # A node with no actions is not possible because NULL_MOVE is always valid in Galcon
-        while not node.isTerminal:
-            if not node.isExpanded:
-                self.expand(node)
-                return node
-            node = self.getBestChild(node)
-        return node
+    def executeBatchRound(self, batchSize):
+        # TODO: this approach of allowing duplicates from select_leaf may overemphasize certain results,
+        # but it primarily has an effect when total allotted search time is very low because there are more duplicates at the start
+        leaves = []
+        while len(leaves) < batchSize:
+            leaf = self.root.select_leaf()
+            leaves.append(leaf)
 
-    def expand(self, node):
-        node.isExpanded = True
-
-        assert node.actions == None, "node priors were attempted to be calculated twice"
-        actions, stateEval = node.state.getPriorProbabilitiesAndEval()
-        random.shuffle(actions)  # TODO: IS THIS NECESSARY?
-        node.actions = actions
-        node.eval = stateEval
-
-    def backpropagate(self, node, reward):
-        r = reward
-        while node is not None:
-            node.n += 1
-            node.totalReward += r
-            node.q = node.totalReward / node.n
-            node = node.parent
-            r *= -1
-
-    def getChildNode(self, node, action):
-        assert action is not None, "ERROR: action was None"
-        if action not in node.children:
-            newNode = treeNode(node.state.takeAction(action), node, action)
-            node.children[action] = newNode
-        return node.children[action]
+        child_prior_list, value_list = self.evaluator.evaluateMany(
+            [leaf.state for leaf in leaves])
+        for leaf, child_priors, value_estimate in zip(leaves, child_prior_list, value_list):
+            leaf.expand(child_priors)
+            leaf.backup(value_estimate[0])
 
     # This is extremely slow because it's called a lot of times... optimize this?
     # TODO: node object pooling
@@ -114,54 +165,8 @@ class mcts():
     # TODO: default Q for child so you don't necessarily have to explore?
     # TODO: Skip child if at root node and child can't possibly catch up to highest_N node given remaining time/iterations
     # TODO: first play urgency
-    def getBestChild(self, parent):
-        bestValue = float("-inf")
-        bestAction = None
-
-        # This is extremely slow because it's called a lot of times... optimize this?
-
-        if parent.n < 1:
-            # TODO: leela uses 1 if parent.n is 0, I think
-            assert parent.n > 0, "ERROR: NODE VISITS LESS THAN 1"
-
-        factor = self.explorationConstant * optSqrt(parent.n)
-
-        for action in parent.actions:
-            # if child exists, use parent q (minus FirstPlayUrgency constant?)
-            if action in parent.children:
-                childNode = parent.children[action]
-                Q = childNode.q
-                U = action[0] / (1 + childNode.n)
-            else:
-                Q = parent.q
-                U = action[0]
-
-            # log("Q: {}, U: {}, action: {}".format(Q, U, child.prevAction))
-            nodeValue = Q + factor * U
-            # log('nodeValue: {}, bestValue: {}'.format(nodeValue, bestValue))
-            if nodeValue > bestValue:
-                bestValue = nodeValue
-                bestAction = action
-        return self.getChildNode(parent, bestAction)
 
     # returns "best" child node
+    # TODO: if stochastic is true, select probabilistically
     def getPrincipalVariation(self, node, stochastic):
-        # for child in node.children.values():
-            # log("child.n: {}".format(child.n))
-
-        # If there are no actions, return null action
-        if len(node.children.values()) == 0:
-            log("WARNING: no actions explored. returning null action")
-            return self.getChildNode(node, createNullAction(1))
-
-        # TODO: try c.q instead of c.n
-        # choose move probabalistic for exploratory play
-        if stochastic:
-            probs = [c.n for c in node.children.values()]
-            total = sum(probs)
-            assert total > 0, 'TOTAL OF CHILD N WAS 0'
-
-            probs = [c/total for c in probs]
-            return max(node.children.values(), key=lambda c: c.n)
-
-        return max(node.children.values(), key=lambda c: c.n)
+        return np.argmax(node.child_number_visits)

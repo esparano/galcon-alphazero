@@ -5,7 +5,7 @@ from log import log
 from copy import deepcopy
 import math
 
-from mcts2 import mcts
+from mcts import mcts
 from trainingGame import TrainingGame
 from mapHelper import MapHelper
 from galconState import GalconState
@@ -53,7 +53,7 @@ class GalconZeroMcts():
         self.mapHelper = MapHelper(g.items)
         self.firstFrame = False
 
-    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, saveTrainingData=True):
+    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, batchSize=1, saveTrainingData=True):
         if self.firstFrame:
             self.firstFrameInit(g)
 
@@ -64,7 +64,7 @@ class GalconZeroMcts():
         assert enemyN != g.you, "Enemy user was the same as bot user"
 
         state = GalconState(g.items, g.you, enemyN, self.mapHelper)
-        chosenActionIndex, numVisited = mctsSearch.search(state)
+        chosenActionIndex, numVisited = mctsSearch.search(state, batchSize)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
