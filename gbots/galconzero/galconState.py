@@ -24,8 +24,8 @@ class GalconState():
         if actionIndex == 0:
             return NullAction()
         elif actionIndex <= NUM_ACTIONS_PER_LAYER:
-            source, target = self.mapHelper.indexToSourceTarget(actionIndex)
-            return SendAction(source.n, target.n, 50)
+            sourceN, targetN = self.mapHelper.indexToSourceTargetN(actionIndex)
+            return SendAction(sourceN, targetN, 50)
         else:
             assert False, "Redirect is not yet supported"
             # newState.executeRedirect(action)

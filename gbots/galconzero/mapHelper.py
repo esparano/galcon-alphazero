@@ -15,6 +15,7 @@ from scipy.spatial import cKDTree
 from functools import lru_cache
 from actions import SendAction, RedirectAction, NullAction
 from nnSetup import NUM_PLANETS
+from numba import njit
 
 
 def getPlanets(items):
@@ -35,8 +36,8 @@ def getSortedPlanets(items):
     return allPlanets
 
 
-@lru_cache(maxsize=8192)
-def indexToSourceTargetN(index):
+@njit
+def _indexToSourceTargetN(index):
     source = int((index - 1) / (NUM_PLANETS - 1))
     target = (index - 1) % (NUM_PLANETS - 1)
     if target >= source:
@@ -57,6 +58,7 @@ class MapHelper():
         # TODO: is this necessary now that MapHelper is instantiated once per game?
         self.queryClosestNPlanets.cache_clear()
         self.queryPlanetsWithinRadius.cache_clear()
+        self.indexToSourceTargetN.cache_clear()
 
     # return closest num planets to x,y
     # returns 1 planet if num==1, else returns array of planets
@@ -94,6 +96,8 @@ class MapHelper():
     def nullMoveToIndex(self, action: NullAction):
         return 0
 
-    def indexToSourceTarget(self, index):
-        sourceIndex, targetIndex = indexToSourceTargetN(index)
-        return self.sortedPlanets[sourceIndex], self.sortedPlanets[targetIndex]
+    @lru_cache(maxsize=1024)
+    def indexToSourceTargetN(self, index):
+        # TODO: increase LRU cache size when redirection is added
+        sourceIndex, targetIndex = _indexToSourceTargetN(index)
+        return self.sortedPlanets[sourceIndex].n, self.sortedPlanets[targetIndex].n
