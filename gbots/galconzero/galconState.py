@@ -1,6 +1,6 @@
 import math
 from log import log
-from gz_mathutils import getVectorComponents, angle
+from gz_mathutils import vectorComponents
 from models import Item
 from stateSim import simulate
 from actions import SendAction, RedirectAction, NullAction
@@ -70,8 +70,8 @@ class GalconState():
         source.ships -= numToSend
         assert source.ships >= 0, "source.ships {} < 0".format(source.ships)
 
-        (xSpawnOffset, ySpawnOffset) = getVectorComponents(
-            angle(source, target), source.radius)
+        (xSpawnOffset, ySpawnOffset) = vectorComponents(
+            source.x, source.y, target.x, target.y, source.radius)
 
         global NEW_FLEET_N
         createdFleet = Item(
