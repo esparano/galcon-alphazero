@@ -74,11 +74,11 @@ class NNEval:
         nnOutput[0] += 0.000001
         # nnOutput[0] += random.random()*0.1
         for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
-            firstFrameSource, firstFrameTarget = gameState.mapHelper.indexToSourceTarget(
+            firstFrameSourceN, firstFrameTargetN = gameState.mapHelper.indexToSourceTargetN(
                 index)
 
-            source = gameState.items[firstFrameSource.n]
-            target = gameState.items[firstFrameTarget.n]
+            source = gameState.items[firstFrameSourceN]
+            target = gameState.items[firstFrameTargetN]
             assert source.n != target.n
 
             # min 1 ship to send, and /100 because of NN input/output scaling

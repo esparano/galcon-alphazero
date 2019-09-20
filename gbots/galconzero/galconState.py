@@ -1,6 +1,6 @@
 import math
 from log import log
-from gz_mathutils import getVectorComponents, angle
+from gz_mathutils import vectorComponents
 from models import Item
 from stateSim import simulate
 from actions import SendAction, RedirectAction, NullAction
@@ -24,8 +24,8 @@ class GalconState():
         if actionIndex == 0:
             return NullAction()
         elif actionIndex <= NUM_ACTIONS_PER_LAYER:
-            source, target = self.mapHelper.indexToSourceTarget(actionIndex)
-            return SendAction(source.n, target.n, 50)
+            sourceN, targetN = self.mapHelper.indexToSourceTargetN(actionIndex)
+            return SendAction(sourceN, targetN, 50)
         else:
             assert False, "Redirect is not yet supported"
             # newState.executeRedirect(action)
@@ -70,8 +70,8 @@ class GalconState():
         source.ships -= numToSend
         assert source.ships >= 0, "source.ships {} < 0".format(source.ships)
 
-        (xSpawnOffset, ySpawnOffset) = getVectorComponents(
-            angle(source, target), source.radius)
+        (xSpawnOffset, ySpawnOffset) = vectorComponents(
+            source.x, source.y, target.x, target.y, source.radius)
 
         global NEW_FLEET_N
         createdFleet = Item(

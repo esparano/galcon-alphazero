@@ -1,4 +1,4 @@
-from gz_mathutils import futureShips, timeToDist, angle, getVectorComponents, dist
+from gz_mathutils import futureShips, timeToDist, vectorComponents, dist
 
 # TODO: gradual fleet landing
 # land the fleet, even if it's far away
@@ -31,7 +31,7 @@ def simulate(items, timestep=0.25):
     for p in items.values():
         # TODO: optimize!!
         if p.type == 'planet':
-            p.ships = futureShips(p, timestep)
+            p.ships = futureShips(p.neutral, p.ships, p.production, timestep)
 
     # second, move fleets towards goal.
     # TODO: It's possible to figure out WHEN the fleet actually lands
@@ -44,13 +44,13 @@ def simulate(items, timestep=0.25):
         # TODO: optimize!!
         if f.type == 'fleet':
             target = items[f.target]
-            fDist = dist(f, target)
+            fDist = dist(f.x, f.y, target.x, target.y)
             # TODO: add 1 ship radius?
             if fDist - fleetUpdateDist < target.radius:
                 forceLandFleet(items, f)
             else:
-                (xDelta, yDelta) = getVectorComponents(
-                    angle(f, target), fleetUpdateDist)
+                (xDelta, yDelta) = vectorComponents(
+                    f.x, f.y, target.x, target.y, fleetUpdateDist)
                 f.x += xDelta
                 f.y += yDelta
 

@@ -16,8 +16,8 @@ def rateTargetPlanet(source, target, playerN):
     if target.owner == playerN:
         return -1000000
     if target.neutral:
-        return -0.7*target.ships*(2) + target.production - dist(source, target)*0.18
-    return -0.7*target.ships*(2 - 1.2) + target.production - dist(source, target)*0.18
+        return -0.7*target.ships*(2) + target.production - dist(source.x, source.y, target.x, target.y)*0.18
+    return -0.7*target.ships*(2 - 1.2) + target.production - dist(source.x, source.y, target.x, target.y)*0.18
 
 
 def replacementPriors(items, playerN, enemyN):
