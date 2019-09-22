@@ -14,7 +14,7 @@
 from scipy.spatial import cKDTree
 from functools import lru_cache
 from actions import SendAction, RedirectAction, NullAction
-from nnSetup import NUM_PLANETS
+from nnSetup import NUM_PLANETS, NUM_ACTIONS_PER_LAYER
 from numba import njit
 
 
@@ -37,13 +37,16 @@ def getSortedPlanets(items):
 
 
 @njit
-def _indexToSourceTargetN(index):
+def indexToSortedSourceTarget(index):
     source = int((index - 1) / (NUM_PLANETS - 1))
     target = (index - 1) % (NUM_PLANETS - 1)
     if target >= source:
         target += 1
     return source, target
 
+@njit
+def sortedSourceTargetToIndex(source, target):
+    return 1 + source * (NUM_PLANETS - 1) + (target if target < source else target - 1)
 
 class MapHelper():
 
@@ -78,7 +81,7 @@ class MapHelper():
     def sendMoveToIndex(self, action: SendAction):
         source = self.planetIdToSortedIdMap[action.sourceN]
         target = self.planetIdToSortedIdMap[action.targetN]
-        return 1 + source * (NUM_PLANETS - 1) + (target if target < source else target - 1)
+        return sortedSourceTargetToIndex(source, target)
 
     def redirectMoveToIndex(self, action: RedirectAction, currentItems):
         fleet = currentItems[action.sourceN]
@@ -86,7 +89,7 @@ class MapHelper():
         proxyPlanetId = self.findClosestPlanetNToFleet(fleet)
         #print("proxy planet: {} {}, fleet: {} {}".format(items[proxyPlanetId].x, items[proxyPlanetId].y, items[fleetId].x, items[fleetId].y))
         # TODO: this will have to be updated after adding percentages
-        return self.sourceTargetToIndex(proxyPlanetId, target) + NUM_PLANETS * (NUM_PLANETS - 1)
+        return sortedSourceTargetToIndex(proxyPlanetId, target) + NUM_ACTIONS_PER_LAYER
 
     def findClosestPlanetNToFleet(self, fleet):
         # use gridding and caching to quickly get approximately closest planet
@@ -99,5 +102,5 @@ class MapHelper():
     @lru_cache(maxsize=1024)
     def indexToSourceTargetN(self, index):
         # TODO: increase LRU cache size when redirection is added
-        sourceIndex, targetIndex = _indexToSourceTargetN(index)
+        sourceIndex, targetIndex = indexToSortedSourceTarget(index)
         return self.sortedPlanets[sourceIndex].n, self.sortedPlanets[targetIndex].n
