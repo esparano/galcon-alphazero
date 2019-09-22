@@ -1,29 +1,14 @@
 import random
 import math
 import numpy as np
-from keras.models import load_model
 
 from trainingGame import TrainingGame
 from trainingHelper import TrainingHelper
 from nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS
 from trainingHelper import getNNInputFromState
+from nnModel import getModel
 
 from log import log
-
-
-# THIS IS REQUIRED TO STOP TENSORFLOW FROM USING UP ALL GPU MEMORY
-# otherwise the bot can't play against itself since the first one "steals" the GPU
-# note: using nvidia-smi to debug GPU usage
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto(
-    gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
-    # device_count = {'GPU': 1}
-)
-config.gpu_options.allow_growth = True
-session = tf.Session(config=config)
-set_session(session)
-
 
 # can normalize 1d or 2d arrays
 def normalizeActions(priors):
@@ -40,13 +25,10 @@ def normalizeActions(priors):
 class NNEval:
 
     def __init__(self, modelFileName='gz_dev.model'):
-        self.model = load_model("galconzero/" + modelFileName)
+        self.model = getModel("galconzero/" + modelFileName)
 
     def evaluate(self, gameState):
-        priors, predictedEval = self.predict([gameState])
-        priors = normalizeActions(priors)
-        # put eval into range [-1,1]
-        return priors, 2 * predictedEval - 1
+        return self.evaluateMany([gameState])
 
     def evaluateMany(self, gameStates):
         priors, predictedEval = self.predict(gameStates)
@@ -71,7 +53,7 @@ class NNEval:
     # TODO: proper Dirichlet noise
     def cleanNNOutput(self, nnOutput, gameState):
         # make sure even if there are no legal moves, NULL-move is still an option.
-        nnOutput[0] += 0.000001
+        nnOutput[0] = nnOutput[0] if nnOutput[0] > 0.000001 else 0.000001
         # nnOutput[0] += random.random()*0.1
         for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
             firstFrameSourceN, firstFrameTargetN = gameState.mapHelper.indexToSourceTargetN(
@@ -83,7 +65,8 @@ class NNEval:
 
             # min 1 ship to send, and /100 because of NN input/output scaling
             if source.owner == gameState.playerN and source.ships >= 0.01:
-                # nnOutput[index] += random.random()*0.1
+                # TODO: this is not proper dirichlet noise
+                nnOutput[index] += random.random()*0.0005
                 pass
             else:
                 nnOutput[index] = 0

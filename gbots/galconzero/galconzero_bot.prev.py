@@ -17,7 +17,7 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=2, evaluator=nnEval, batchSize=1)
+        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
     commitAction(action)
 
 ################################################################################

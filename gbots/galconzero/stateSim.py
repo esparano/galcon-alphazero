@@ -1,4 +1,6 @@
 from gz_mathutils import futureShips, timeToDist, vectorComponents, dist
+from log import log
+
 
 # TODO: gradual fleet landing
 # land the fleet, even if it's far away

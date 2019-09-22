@@ -120,30 +120,34 @@ class mcts():
             # number of iterations of the search
             if iterationLimit < 1:
                 raise ValueError("Iteration limit must be greater than one")
-            self.searchLimit = iterationLimit
+            self.iterationLimit = iterationLimit
             self.limitType = 'iterations'
 
-    def search(self, initialState, batchSize):
+    # disable stochastic for competitive play
+    def search(self, initialState, batchSize, stochastic=True):
         self.root = UCTNode(initialState, move=None, parent=DummyNode())
 
         if self.limitType == 'time':
             timeLimit = time.time() + self.timeLimit / 1000
             while time.time() < timeLimit:
                 self.executeBatchRound(batchSize)
+                # self.executeSingleRound()
         else:
-            for _ in range(self.searchLimit):
+            while self.root.number_visits < self.iterationLimit:
                 self.executeBatchRound(batchSize)
+                # self.executeSingleRound()
 
-        # exploratory play
-        # TODO: DISABLE FOR COMPETITIVE PLAY
-        bestAction = self.getPrincipalVariation(self.root, stochastic=True)
+        bestAction = self.getPrincipalVariation(self.root, stochastic)
         return bestAction, self.root.number_visits
 
     def executeSingleRound(self):
+        # log("start: {}, {}".format(self.root.total_value, self.root.number_visits))
         leaf = self.root.select_leaf()
         child_priors, value_estimate = self.evaluator.evaluate(leaf.state)
         leaf.expand(child_priors)
         leaf.backup(value_estimate)
+        # log("end: {}, {}".format(self.root.total_value, self.root.number_visits))
+        # log("value was: {}".format(value_estimate[0]))
 
     def executeBatchRound(self, batchSize):
         # TODO: this approach of allowing duplicates from select_leaf may overemphasize certain results,
@@ -167,6 +171,11 @@ class mcts():
     # TODO: first play urgency
 
     # returns "best" child node
-    # TODO: if stochastic is true, select probabilistically
     def getPrincipalVariation(self, node, stochastic):
+        if stochastic:
+            normalizedVisits = (node.child_number_visits /
+                                np.sum(node.child_number_visits))
+            choice = np.random.choice(
+                np.arange(normalizedVisits.size), p=normalizedVisits)
+            return choice
         return np.argmax(node.child_number_visits)

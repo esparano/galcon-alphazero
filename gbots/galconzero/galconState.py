@@ -50,7 +50,7 @@ class GalconState():
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
-        simulate(newState.items, 0.5)
+        simulate(newState.items, 2)
 
         return newState
 

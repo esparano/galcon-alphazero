@@ -11,13 +11,12 @@ nnEval = NNEval()
 
 import cProfile
 
-
 ################################################################################
 
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, timeLimit=1000, evaluator=nnEval, batchSize=8)
+        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
     commitAction(action)
 
 ################################################################################
