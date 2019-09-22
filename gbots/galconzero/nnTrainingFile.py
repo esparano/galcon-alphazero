@@ -7,7 +7,7 @@ from os.path import isfile, join
 
 from trainingHelper import TrainingHelper
 from trainingGame import loadTrainingGame
-from nnTrainingDataAugmentor import getXAxisReflectedTrainingData
+from nnTrainingDataAugmentor import getXAxisReflectedTrainingData, getYAxisReflectedTrainingData
 from log import log
 
 trainingGameLocation = "D:/GalconZero/Games"
@@ -58,14 +58,26 @@ def getTrainingDataForFileList(filePaths):
         #     print("loading training file {}".format(filePath))
         trainX, policy, posEval = fetchTrainXY(filePath)
 
-        # twice, once for regular, once for flipped Y values
+        # no reflection
         xValues.extend(trainX)
-        xValues.extend(getXAxisReflectedTrainingData(trainX))
-
-        # twice, once for regular, once for flipped Y values (reflecting over x axis does not change policy or value)
-        policies.extend(policy)
         policies.extend(policy)
         evals.extend(posEval)
+        
+        # reflect over x axis (reflecting over x axis does not change policy or value)
+        xValues.extend(getXAxisReflectedTrainingData(trainX))
+        policies.extend(policy)
+        evals.extend(posEval)
+        
+        yFlippedTrainX, yFlippedPolicy = getYAxisReflectedTrainingData(trainX, policy)
+        
+        # reflect over y axis
+        xValues.extend(yFlippedTrainX)
+        policies.extend(yFlippedPolicy)
+        evals.extend(posEval)
+        
+        # reflect over both y and x axis (reflecting over x axis does not change policy or value)
+        xValues.extend(getXAxisReflectedTrainingData(yFlippedTrainX))
+        policies.extend(yFlippedPolicy)
         evals.extend(posEval)
 
     return xValues, policies, evals
