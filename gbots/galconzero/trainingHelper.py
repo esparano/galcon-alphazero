@@ -67,10 +67,7 @@ class TrainingHelper():
 
     # get the desired outputs of the neural network
     def getTrainY(self):
-        # TODO: make sure this is a np array
-        policyTrain = self.trainingGame.refinedProbs
-        assert math.isclose(
-            sum(policyTrain), 1), "refined probabilities sum {} != 1.".format(sum(policyTrain))
+        policyTrain = np.array(self.trainingGame.refinedProbs)
 
         resultBinary = 1 if self.trainingGame.result else 0
         numSamples = policyTrain.shape[0]

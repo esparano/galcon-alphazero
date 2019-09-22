@@ -20,13 +20,13 @@ def getEnemyUserN(g):
 
 
 def getRefinedProbs(root):
-    if not root.n > 1:
+    # TODO: replace this
+    if not root.number_visits > 1:
         log("WARNING: cannot gen training data because no search was done. Skipping frame.")
         return None
 
-    refinedProbs = [(child.prevAction, child.n / (root.n - 1))
-                    for child in root.children.values()]
-    totalProb = sum([p[1] for p in refinedProbs])
+    refinedProbs = root.child_number_visits / np.sum(root.child_number_visits)
+    totalProb = np.sum(refinedProbs)
     assert math.isclose(
         totalProb, 1), "prior probabilities sum {} != 1.".format(totalProb)
 
@@ -60,20 +60,18 @@ class GalconZeroMcts():
         mctsSearch = mcts(evaluator, timeLimit=timeLimit,
                           iterationLimit=iterationLimit, explorationConstant=1)
 
-        enemyN = getEnemyUserN(g)
-        assert enemyN != g.you, "Enemy user was the same as bot user"
-
-        state = GalconState(g.items, g.you, enemyN, self.mapHelper)
+        state = GalconState(g.items, g.you, getEnemyUserN(g), self.mapHelper)
         chosenActionIndex, numVisited = mctsSearch.search(state, batchSize)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
 
-        if False:  # saveTrainingData:
+        if saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)
             if refinedProbs is not None:
                 # TODO: is it necessary to copy state?
-                self.trainingGame.appendState(deepcopy(state), refinedProbs)
+                stateCopy = deepcopy(state)
+                self.trainingGame.appendState(stateCopy, refinedProbs)
 
         return chosenAction
 

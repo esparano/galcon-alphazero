@@ -1,1 +1,1 @@
-activate galconzero && "C:\Users\Evan Sparano\Documents\GitHub\galcon-alphazero\gbots\gbots.exe" G0-DEV
+activate galconzero && "C:\Users\Evan Sparano\Documents\GitHub\galcon-alphazero\gbots\gbots.exe" G0-DEV -config config1.ini
