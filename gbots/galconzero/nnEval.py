@@ -1,25 +1,25 @@
 import random
 import math
 import numpy as np
+from numba import njit
 
 from trainingGame import TrainingGame
 from trainingHelper import TrainingHelper
-from nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS
+from nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS, NUM_PLANETS
 from trainingHelper import getNNInputFromState
 from nnModel import getModel
 
 from log import log
+from evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
 
-# can normalize 1d or 2d arrays
-def normalizeActions(priors):
-    priors /= np.linalg.norm(priors, ord=1, axis=1, keepdims=True)
 
-    # for i in range(0, len(priors)):
-    #     priorsSum = sum(priors[i])
-    #     assert math.isclose(priorsSum, 1, rel_tol=0.000001), "prior probabilities sum {} != 1.".format(
-    #         priorsSum)
+@njit
+def applyDirichletNoise(nnOutput):
+    # make sure even if there are no legal moves, NULL-move is still an option.
+    nnOutput[0] = nnOutput[0] if nnOutput[0] > 0.000001 else 0.000001
+    pass
 
-    return priors
+# TODO: inline this function?
 
 
 class NNEval:
@@ -32,9 +32,9 @@ class NNEval:
 
     def evaluateMany(self, gameStates):
         priors, predictedEval = self.predict(gameStates)
-        priors = normalizeActions(priors)
+        normalizeActions(priors)
         # put eval into range [-1,1]
-        return priors, 2 * predictedEval - 1
+        return priors, 2 * predictedEval[:, 0] - 1
 
     # process single game state
     # TODO: process multiple game states
@@ -43,35 +43,12 @@ class NNEval:
                               for state in gameStates])
         allPriors, allEvals = self.model.predict(allInputs)
         # TODO: modify priors array in place instead of doing list comprehension
-        cleanedPriors = np.array([self.cleanNNOutput(priors, state)
-                                  for priors, state in zip(allPriors, gameStates)])
-        return cleanedPriors, allEvals
+        for priors, state in zip(allPriors, gameStates):
+            self.cleanNNOutput(priors, state)
+        return allPriors, allEvals
 
-    # Adds randomness and removes illegal moves
-    # TODO: separate randomness-adding and illegal-move-pruning into two different functions
-    # TODO: compute illegal move mask and copy it as part of Map state, any time planet is captured, update legal moves accordingly.
-    # TODO: proper Dirichlet noise
     def cleanNNOutput(self, nnOutput, gameState):
-        # make sure even if there are no legal moves, NULL-move is still an option.
-        nnOutput[0] = nnOutput[0] if nnOutput[0] > 0.000001 else 0.000001
-        # nnOutput[0] += random.random()*0.1
-        for index in range(1, NUM_ACTIONS_PER_LAYER + 1):
-            firstFrameSourceN, firstFrameTargetN = gameState.mapHelper.indexToSourceTargetN(
-                index)
-
-            source = gameState.items[firstFrameSourceN]
-            target = gameState.items[firstFrameTargetN]
-            assert source.n != target.n
-
-            # min 1 ship to send, and /100 because of NN input/output scaling
-            if source.owner == gameState.playerN and source.ships >= 0.01:
-                # TODO: this is not proper dirichlet noise
-                nnOutput[index] += random.random()*0.0005
-                pass
-            else:
-                nnOutput[index] = 0
-
-        # TODO: UNDO THIS. for now, just suppress all redirection.
-        nnOutput[NUM_ACTIONS_PER_LAYER + 1:] = 0
-
-        return nnOutput
+        applyDirichletNoise(nnOutput)
+        # TODO: refactor to use a gameState.legalMoveMask
+        # TODO: calculate legality only once on game state object creation (and only on planet capture), and track along with game state, then apply legal move mask to NN output
+        applyLegalMoveMask(nnOutput, calculateLegalMoveMaskForState(gameState))

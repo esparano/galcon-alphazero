@@ -5,3 +5,4 @@ timeout /t 5 /nobreak > NUL
 START "Starting bot 3" "C:\Users\Evan Sparano\Documents\GitHub\galcon-alphazero\gbots\startDevBot3.bat"
 timeout /t 5 /nobreak > NUL
 START "Starting bot 4" "C:\Users\Evan Sparano\Documents\GitHub\galcon-alphazero\gbots\startDevBot4.bat"
+timeout /t 5 /nobreak > NUL
