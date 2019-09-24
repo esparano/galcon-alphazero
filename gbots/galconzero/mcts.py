@@ -5,11 +5,33 @@ import math
 import random
 import collections
 import numpy as np
+from numba import njit, jit
 
 from log import log
 from nnSetup import NUM_OUTPUTS
 
 from functools import lru_cache
+
+
+@njit
+def _optQ(child_total_value, child_number_visits):
+    return child_total_value / (1 + child_number_visits)
+
+
+@njit
+def _optU(child_number_visits, child_priors, number_visits):
+    # return very low number to never choose illegal moves which are marked by special value '0'
+    # (0 shouldn't normally be output by NN)
+    return np.where(child_priors > 0,
+                    np.sqrt(number_visits) * (
+                        child_priors / (1 + child_number_visits)),
+                    -1000000)
+
+
+@njit
+def _optBestChild(child_total_value, child_number_visits, child_priors, number_visits):
+    return np.argmax(_optQ(child_total_value, child_number_visits) +
+                     _optU(child_number_visits, child_priors, number_visits))
 
 
 class UCTNode():
@@ -41,19 +63,8 @@ class UCTNode():
     def total_value(self, value):
         self.parent.child_total_value[self.move] = value
 
-    def child_Q(self):
-        return self.child_total_value / (1 + self.child_number_visits)
-
-    def child_U(self):
-        # return very low number to never choose illegal moves which are marked by special value '0'
-        # (0 shouldn't normally be output by NN)
-        return np.where(self.child_priors > 0,
-                        np.sqrt(self.number_visits) * (
-                            self.child_priors / (1 + self.child_number_visits)),
-                        -1000000)
-
     def best_child(self):
-        return np.argmax(self.child_Q() + self.child_U())
+        return _optBestChild(self.child_total_value, self.child_number_visits, self.child_priors, self.number_visits)
 
     def select_leaf(self):
         current = self
@@ -147,7 +158,7 @@ class mcts():
         leaf.expand(child_priors)
         leaf.backup(value_estimate)
         # log("end: {}, {}".format(self.root.total_value, self.root.number_visits))
-        # log("value was: {}".format(value_estimate[0]))
+        # log("value was: {}".format(value_estimate))
 
     def executeBatchRound(self, batchSize):
         # TODO: this approach of allowing duplicates from select_leaf may overemphasize certain results,
@@ -161,7 +172,7 @@ class mcts():
             [leaf.state for leaf in leaves])
         for leaf, child_priors, value_estimate in zip(leaves, child_prior_list, value_list):
             leaf.expand(child_priors)
-            leaf.backup(value_estimate[0])
+            leaf.backup(value_estimate)
 
     # This is extremely slow because it's called a lot of times... optimize this?
     # TODO: node object pooling
