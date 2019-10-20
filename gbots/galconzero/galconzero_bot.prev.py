@@ -7,7 +7,7 @@ from commitAction import commitAction
 from nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-nnEval = NNEval()
+# evaluator = NNEval()
 
 import cProfile
 
@@ -17,7 +17,7 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
+        g, iterationLimit=2)  # , evaluator=evaluator, batchSize=8)
     commitAction(action)
 
 ################################################################################

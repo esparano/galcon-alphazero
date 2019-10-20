@@ -11,6 +11,9 @@ def forceLandFleet(items, fleet):
 
     # update ships as fleet lands on planet
     if fleet.owner == target.owner:
+        # TODO: something is potentially really suspect here.
+        # log("fleet.id: {}, target.ships: {}, fleet.ships: {}".format(fleet.n,
+        #                                                              target.ships, fleet.ships))
         target.ships += fleet.ships
     else:
         diff = target.ships - fleet.ships

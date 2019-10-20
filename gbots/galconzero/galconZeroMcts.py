@@ -10,6 +10,7 @@ from trainingGame import TrainingGame
 from mapHelper import MapHelper
 from galconState import GalconState
 from randomEvaluator import RandomEvaluator
+from simpleEvaluator import SimpleEvaluator
 
 
 def getEnemyUserN(g):
@@ -33,7 +34,7 @@ def getRefinedProbs(root):
     return refinedProbs
 
 
-dummyEvaluator = RandomEvaluator()
+dummyEvaluator = SimpleEvaluator()
 
 
 class GalconZeroMcts():
@@ -54,7 +55,8 @@ class GalconZeroMcts():
                           iterationLimit=iterationLimit, explorationConstant=1)
 
         state = GalconState(g.items, g.you, getEnemyUserN(g), self.mapHelper)
-        chosenActionIndex, numVisited = mctsSearch.search(state, batchSize)
+        chosenActionIndex, numVisited = mctsSearch.search(
+            state, batchSize, stochastic=False)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
