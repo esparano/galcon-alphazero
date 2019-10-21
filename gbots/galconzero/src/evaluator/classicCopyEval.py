@@ -1,9 +1,8 @@
 import random
 import numpy as np
 
-from log import log
-from gz_mathutils import dist
-from nnSetup import NUM_OUTPUTS
+from gzutils import logger, gz_mathutils
+from nn.nnSetup import NUM_OUTPUTS
 
 
 def rateSourcePlanet(source, playerN):
@@ -16,10 +15,11 @@ def rateTargetPlanet(source, target, playerN):
     if target.owner == playerN:
         return -1000000
     if target.neutral:
-        return -0.7*target.ships*(2) + target.production - dist(source.x, source.y, target.x, target.y)*0.18
-    return -0.7*target.ships*(2 - 1.2) + target.production - dist(source.x, source.y, target.x, target.y)*0.18
+        return -0.7*target.ships*(2) + target.production - gz_mathutils.dist(source.x, source.y, target.x, target.y)*0.18
+    return -0.7*target.ships*(2 - 1.2) + target.production - gz_mathutils.dist(source.x, source.y, target.x, target.y)*0.18
 
 
+# TODO: this is out of date
 def replacementPriors(items, playerN, enemyN):
     outputs = np.zeros([NUM_OUTPUTS], dtype=np.float32)
     planets = mapHelper.planets

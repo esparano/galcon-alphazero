@@ -1,15 +1,13 @@
-from copy import deepcopy
-import numpy as np
-
-from log import log
-from copy import deepcopy
 import math
+import numpy as np
+from copy import deepcopy
 
-from mcts import mcts
-from trainingGame import TrainingGame
-from mapHelper import MapHelper
-from galconState import GalconState
-from randomEvaluator import RandomEvaluator
+from gzutils import logger
+from uctsearch.mcts import Mcts
+from training.trainingGame import TrainingGame
+from domain.mapHelper import MapHelper
+from domain.galconState import GalconState
+from evaluator.randomEvaluator import RandomEvaluator
 
 
 def getEnemyUserN(g):
@@ -22,7 +20,8 @@ def getEnemyUserN(g):
 def getRefinedProbs(root):
     # TODO: replace this
     if not root.number_visits > 1:
-        log("WARNING: cannot gen training data because no search was done. Skipping frame.")
+        logger.log(
+            "WARNING: cannot gen training data because no search was done. Skipping frame.")
         return None
 
     refinedProbs = root.child_number_visits / np.sum(root.child_number_visits)
@@ -50,7 +49,7 @@ class GalconZeroMcts():
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = mcts(evaluator, timeLimit=timeLimit,
+        mctsSearch = Mcts(evaluator, timeLimit=timeLimit,
                           iterationLimit=iterationLimit, explorationConstant=1)
 
         state = GalconState(g.items, g.you, getEnemyUserN(g), self.mapHelper)
@@ -70,7 +69,7 @@ class GalconZeroMcts():
 
     def printResults(self, chosenActionIndex, numVisited, mctsSearch, verbose=False):
         if verbose:
-            log("ACTION TREE:")
+            logger.log("ACTION TREE:")
 
         currentNode = mctsSearch.root
         depth = 0
@@ -82,14 +81,14 @@ class GalconZeroMcts():
                 action = mctsSearch.root.state.mapActionIndexToAction(
                     bestChildIndex)
                 if depth % 2 == 0:
-                    log("Bot: {}".format(str(action)))
+                    logger.log("Bot: {}".format(str(action)))
                 else:
-                    log("Enemy: {}".format(str(action)))
+                    logger.log("Enemy: {}".format(str(action)))
 
             depth += 1
             currentNode = currentNode.children[bestChildIndex]
 
-        log("nodes: {}, depth: {}, eval: {:.2f}".format(
+        logger.log("nodes: {}, depth: {}, eval: {:.2f}".format(
             numVisited, depth, mctsSearch.root.total_value / mctsSearch.root.number_visits))
 
     def reportGameOver(self, g, winner):

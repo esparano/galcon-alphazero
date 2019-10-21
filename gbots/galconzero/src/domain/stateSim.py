@@ -1,5 +1,5 @@
-from gz_mathutils import futureShips, timeToDist, vectorComponents, dist
-from log import log
+from gzutils.gz_mathutils import futureShips, timeToDist, vectorComponents, dist
+from gzutils import logger
 
 
 # TODO: gradual fleet landing

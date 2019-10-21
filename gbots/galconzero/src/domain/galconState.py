@@ -1,10 +1,8 @@
 import math
-from log import log
-from gz_mathutils import vectorComponents
-from models import Item
-from stateSim import simulate
-from actions import SendAction, RedirectAction, NullAction
-from nnSetup import NUM_ACTIONS_PER_LAYER
+
+from gzutils import logger, gz_mathutils
+from domain import models, stateSim, actions
+from nn import nnSetup
 
 NEW_FLEET_N = 10000
 
@@ -22,10 +20,10 @@ class GalconState():
 
     def mapActionIndexToAction(self, actionIndex):
         if actionIndex == 0:
-            return NullAction()
-        elif actionIndex <= NUM_ACTIONS_PER_LAYER:
+            return actions.NullAction()
+        elif actionIndex <= nnSetup.NUM_ACTIONS_PER_LAYER:
             sourceN, targetN = self.mapHelper.indexToSourceTargetN(actionIndex)
-            return SendAction(sourceN, targetN, 50)
+            return actions.SendAction(sourceN, targetN, 50)
         else:
             assert False, "Redirect is not yet supported"
             # newState.executeRedirect(action)
@@ -39,10 +37,10 @@ class GalconState():
 
         chosenAction = self.mapActionIndexToAction(actionIndex)
         # TODO: FIX THIS RUNTIME ERROR using mapHelper
-        if isinstance(chosenAction, NullAction):
+        if isinstance(chosenAction, actions.NullAction):
             # null action
             pass
-        elif isinstance(chosenAction, SendAction):
+        elif isinstance(chosenAction, actions.SendAction):
             newState.executeSend(chosenAction)
         else:
             assert False, "Redirect is not yet supported"
@@ -50,7 +48,7 @@ class GalconState():
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
-        simulate(newState.items, 2)
+        stateSim.simulate(newState.items, 2)
 
         return newState
 
@@ -63,18 +61,18 @@ class GalconState():
         # TODO: min 1 ship, rounding? etc.
         numToSend = source.ships * (perc / 100)
         if (numToSend > source.ships):
-            log("WARNING: attempting to send {} when planet has {}".format(
+            logger("WARNING: attempting to send {} when planet has {}".format(
                 numToSend, source.ships))
             numToSend = source.ships
 
         source.ships -= numToSend
         assert source.ships >= 0, "source.ships {} < 0".format(source.ships)
 
-        (xSpawnOffset, ySpawnOffset) = vectorComponents(
+        (xSpawnOffset, ySpawnOffset) = gz_mathutils.vectorComponents(
             source.x, source.y, target.x, target.y, source.radius)
 
         global NEW_FLEET_N
-        createdFleet = Item(
+        createdFleet = models.Item(
             n=NEW_FLEET_N,
             type="fleet",
             owner=source.owner,

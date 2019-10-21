@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-from nnTrainingFile import getTrainingDataForNumGames
+from training.nnTrainingFile import getTrainingDataForNumGames
 
 BATCH_SIZE = 128
 

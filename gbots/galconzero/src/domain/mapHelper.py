@@ -13,9 +13,10 @@
 
 from scipy.spatial import cKDTree
 from functools import lru_cache
-from actions import SendAction, RedirectAction, NullAction
-from nnSetup import NUM_PLANETS, NUM_ACTIONS_PER_LAYER
 from numba import njit
+
+from domain.actions import SendAction, RedirectAction, NullAction
+from nn.nnSetup import NUM_PLANETS, NUM_ACTIONS_PER_LAYER
 
 
 def getPlanets(items):
@@ -44,9 +45,11 @@ def indexToSortedSourceTarget(index):
         target += 1
     return source, target
 
+
 @njit
 def sortedSourceTargetToIndex(source, target):
     return 1 + source * (NUM_PLANETS - 1) + (target if target < source else target - 1)
+
 
 class MapHelper():
 
@@ -85,11 +88,11 @@ class MapHelper():
 
     def redirectMoveToIndex(self, action: RedirectAction, currentItems):
         fleet = currentItems[action.sourceN]
-        targetN = actions.targetN
+        targetN = action.targetN
         proxyPlanetId = self.findClosestPlanetNToFleet(fleet)
         #print("proxy planet: {} {}, fleet: {} {}".format(items[proxyPlanetId].x, items[proxyPlanetId].y, items[fleetId].x, items[fleetId].y))
         # TODO: this will have to be updated after adding percentages
-        return sortedSourceTargetToIndex(proxyPlanetId, target) + NUM_ACTIONS_PER_LAYER
+        return sortedSourceTargetToIndex(proxyPlanetId, targetN) + NUM_ACTIONS_PER_LAYER
 
     def findClosestPlanetNToFleet(self, fleet):
         # use gridding and caching to quickly get approximately closest planet

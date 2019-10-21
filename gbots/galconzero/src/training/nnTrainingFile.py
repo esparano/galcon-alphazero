@@ -5,10 +5,10 @@ import math
 from os import listdir
 from os.path import isfile, join
 
-from trainingHelper import TrainingHelper
-from trainingGame import loadTrainingGame
-from nnTrainingDataAugmentor import getXAxisReflectedTrainingData, getYAxisReflectedTrainingData
-from log import log
+from training.trainingHelper import TrainingHelper
+from training.trainingGame import loadTrainingGame
+from training.nnTrainingDataAugmentor import getXAxisReflectedTrainingData, getYAxisReflectedTrainingData
+from gzutils import logger
 
 trainingGameLocation = "D:/GalconZero/Games"
 TRAINING_FILE_SUFFIX = ".npz"
@@ -20,7 +20,7 @@ def createTrainCacheFile(gameFile, trainingFile):
     try:
         trainingHelper = TrainingHelper(loadTrainingGame(gameFile))
     except EOFError:
-        log("WARNING: EOFError occurred when parsing {}".format(gameFile))
+        logger.log("WARNING: EOFError occurred when parsing {}".format(gameFile))
         return
 
     trainX = trainingHelper.getTrainX()
@@ -62,19 +62,20 @@ def getTrainingDataForFileList(filePaths):
         xValues.extend(trainX)
         policies.extend(policy)
         evals.extend(posEval)
-        
+
         # reflect over x axis (reflecting over x axis does not change policy or value)
         xValues.extend(getXAxisReflectedTrainingData(trainX))
         policies.extend(policy)
         evals.extend(posEval)
-        
-        yFlippedTrainX, yFlippedPolicy = getYAxisReflectedTrainingData(trainX, policy)
-        
+
+        yFlippedTrainX, yFlippedPolicy = getYAxisReflectedTrainingData(
+            trainX, policy)
+
         # reflect over y axis
         xValues.extend(yFlippedTrainX)
         policies.extend(yFlippedPolicy)
         evals.extend(posEval)
-        
+
         # reflect over both y and x axis (reflecting over x axis does not change policy or value)
         xValues.extend(getXAxisReflectedTrainingData(yFlippedTrainX))
         policies.extend(yFlippedPolicy)

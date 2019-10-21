@@ -7,10 +7,8 @@ import collections
 import numpy as np
 from numba import njit, jit
 
-from log import log
-from nnSetup import NUM_OUTPUTS
-
-from functools import lru_cache
+from gzutils import logger
+from nn.nnSetup import NUM_OUTPUTS
 
 
 @njit
@@ -112,7 +110,7 @@ class DummyNode(object):
         self.child_number_visits = collections.defaultdict(int)
 
 
-class mcts():
+class Mcts():
     def __init__(self, evaluator, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
         self.evaluator = evaluator
         self.explorationConstant = explorationConstant

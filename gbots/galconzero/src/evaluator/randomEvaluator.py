@@ -1,6 +1,7 @@
 import numpy as np
-from nnSetup import NUM_OUTPUTS
-from evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
+
+from nn.nnSetup import NUM_OUTPUTS
+from evaluator.evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
 
 
 class RandomEvaluator():

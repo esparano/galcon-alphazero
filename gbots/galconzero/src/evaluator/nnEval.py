@@ -3,14 +3,12 @@ import math
 import numpy as np
 from numba import njit
 
-from trainingGame import TrainingGame
-from trainingHelper import TrainingHelper
-from nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS, NUM_PLANETS
-from trainingHelper import getNNInputFromState
-from nnModel import getModel
-
-from log import log
-from evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
+from training.trainingGame import TrainingGame
+from training.trainingHelper import TrainingHelper, getNNInputFromState
+from nn.nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS, NUM_PLANETS
+from nn.nnModel import getModel
+from gzutils import logger
+from evaluator.evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
 
 
 @njit

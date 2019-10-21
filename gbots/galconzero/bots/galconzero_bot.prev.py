@@ -1,20 +1,23 @@
 import sys
 import random
-from galconZeroMcts import GalconZeroMcts
-from models import Galaxy, Item
-from log import send, log
-from commitAction import commitAction
+import cProfile
+
+from uctsearch.galconZeroMcts import GalconZeroMcts
+from domain.models import Galaxy, Item
+from gzutils import logger, commitAction
+from evaluator.nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
+nnEval = NNEval()
+
 
 ################################################################################
 
 
 def bot(g):
-    # just enough iterations to create a child for each possible move, but no more
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=1, saveTrainingData=False)
-    commitAction(action)
+        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
+    commitAction.commit(action)
 
 ################################################################################
 
@@ -41,11 +44,12 @@ def parse(g, line):
         return
     if t[0] == "/TICK":
         bot(g)
-        send("/TOCK")
+        logger.send("/TOCK")
     elif t[0] == "/PRINT":
-        log("\t".join(t[1:]))
+        logger.log("\t".join(t[1:]))
     elif t[0] == "/RESULTS":
-        log("\t".join(t[1:]))
+        galconZeroMcts.reportGameOver(g, int(t[4]))
+        logger.log("\t".join(t[1:]))
     elif t[0] == "/RESET":
         g.reset()
     elif t[0] == "/SET":
@@ -61,7 +65,7 @@ def parse(g, line):
             color=int(t[3], 16),
             team=int(t[4]),
             xid=int(t[5]),
-            neutral=int(t[1]) == 1,
+            neutral=int(t[1]) == 1,  # TODO: this is probably unstable?
         )
         g.items[o.n] = o
     elif t[0] == "/PLANET":
@@ -96,9 +100,9 @@ def parse(g, line):
         if n in g.items:
             del(g.items[n])
     elif t[0] == "/ERROR":
-        log("\t".join(t[1:]))
+        logger.log("\t".join(t[1:]))
     else:
-        log("unhandled command: " + "\t".join(t))
+        logger.log("unhandled command: " + "\t".join(t))
 
 
 def sync(g, t):
@@ -130,4 +134,5 @@ def sync(g, t):
 
 
 if __name__ == "__main__":
+    # cProfile.run('main()', "savedStats")
     main()

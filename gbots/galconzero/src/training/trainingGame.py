@@ -1,6 +1,5 @@
 import pickle
 import time
-from log import log
 
 DEFAULT_FILENAME = 'D:/GalconZero/Games/game_{}_{}.pickle'
 

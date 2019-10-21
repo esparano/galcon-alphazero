@@ -1,15 +1,14 @@
 import sys
 import random
-from galconZeroMcts import GalconZeroMcts
-from models import Galaxy, Item
-from log import send, log
-from commitAction import commitAction
-from classicCopyEval import ClassicCopyEval
+import cProfile
+
+from uctsearch.galconZeroMcts import GalconZeroMcts
+from domain.models import Galaxy, Item
+from gzutils import logger, commitAction
+from evaluator.nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-evaluator = ClassicCopyEval()
-
-import cProfile
+nnEval = NNEval()
 
 
 ################################################################################
@@ -17,8 +16,8 @@ import cProfile
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=2, evaluator=evaluator)
-    commitAction(action)
+        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
+    commitAction.commit(action)
 
 ################################################################################
 
@@ -45,12 +44,12 @@ def parse(g, line):
         return
     if t[0] == "/TICK":
         bot(g)
-        send("/TOCK")
+        logger.send("/TOCK")
     elif t[0] == "/PRINT":
-        log("\t".join(t[1:]))
+        logger.log("\t".join(t[1:]))
     elif t[0] == "/RESULTS":
         galconZeroMcts.reportGameOver(g, int(t[4]))
-        log("\t".join(t[1:]))
+        logger.log("\t".join(t[1:]))
     elif t[0] == "/RESET":
         g.reset()
     elif t[0] == "/SET":
@@ -101,9 +100,9 @@ def parse(g, line):
         if n in g.items:
             del(g.items[n])
     elif t[0] == "/ERROR":
-        log("\t".join(t[1:]))
+        logger.log("\t".join(t[1:]))
     else:
-        log("unhandled command: " + "\t".join(t))
+        logger.log("unhandled command: " + "\t".join(t))
 
 
 def sync(g, t):

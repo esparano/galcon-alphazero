@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 
-from nnSetup import NUM_PLANETS, NUM_OUTPUTS
+from nn.nnSetup import NUM_PLANETS, NUM_OUTPUTS
 
 
 def normalizeActions(priors):

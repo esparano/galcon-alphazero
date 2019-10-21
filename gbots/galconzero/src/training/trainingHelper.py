@@ -1,8 +1,6 @@
 import math
 import numpy as np
 
-from log import log
-
 # TODO: refactor this so it's more reusable in bot code
 
 # TODO: unit test all of this. Lots of potential bugs.
