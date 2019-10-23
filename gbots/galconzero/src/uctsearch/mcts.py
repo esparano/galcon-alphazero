@@ -10,26 +10,37 @@ from numba import njit, jit
 from gzutils import logger
 from nn.nnSetup import NUM_OUTPUTS
 
-
-@njit
-def _optQ(child_total_value, child_number_visits):
-    return child_total_value / (1 + child_number_visits)
+MIN_CHILD_U = -1000000
 
 
 @njit
-def _optU(child_number_visits, child_priors, number_visits):
+def childQ(child_total_value, child_number_visits, defaultQ):
+    return np.where(child_number_visits > 0,
+                    child_total_value / child_number_visits,
+                    defaultQ)
+
+
+@njit
+def childU(child_number_visits, child_priors, number_visits):
     # return very low number to never choose illegal moves which are marked by special value '0'
     # (0 shouldn't normally be output by NN)
+    # TODO: add in exploration parameter c_puct
+    constFactor = np.sqrt(number_visits)  # * cpuct
     return np.where(child_priors > 0,
-                    np.sqrt(number_visits) * (
-                        child_priors / (1 + child_number_visits)),
-                    -1000000)
+                    child_priors * constFactor /
+                    (1 + child_number_visits),
+                    MIN_CHILD_U)
 
 
 @njit
-def _optBestChild(child_total_value, child_number_visits, child_priors, number_visits):
-    return np.argmax(_optQ(child_total_value, child_number_visits) +
-                     _optU(child_number_visits, child_priors, number_visits))
+def selectBestChild(child_total_value, child_number_visits, child_vloss, child_priors, parent_number_visits, parent_vloss, defaultQ):
+    # MAKE SURE to flip child_total_value because parent is opposite player of child!
+    virtual_total_value = -child_total_value - child_vloss
+    virtual_number_visits = child_number_visits + child_vloss
+    virtual_parent_visits = parent_number_visits + parent_vloss
+    total = childQ(virtual_total_value, virtual_number_visits, defaultQ) + \
+        childU(virtual_number_visits, child_priors, virtual_parent_visits)
+    return np.argmax(total)
 
 
 class UCTNode():
@@ -43,6 +54,8 @@ class UCTNode():
         self.child_total_value = np.zeros(
             [NUM_OUTPUTS], dtype=np.float32)
         self.child_number_visits = np.zeros(
+            [NUM_OUTPUTS], dtype=np.int32)
+        self.child_vloss = np.zeros(
             [NUM_OUTPUTS], dtype=np.int32)
 
     @property
@@ -61,20 +74,31 @@ class UCTNode():
     def total_value(self, value):
         self.parent.child_total_value[self.move] = value
 
+    @property
+    def vloss(self):
+        return self.parent.child_vloss[self.move]
+
+    @vloss.setter
+    def vloss(self, value):
+        self.parent.child_vloss[self.move] = value
+
+    @property
+    def avg_value(self):
+        assert self.number_visits > 0, "NUMBER VISITS WAS NOT 0"
+        return self.total_value / self.number_visits
+
     def best_child(self):
-        return _optBestChild(self.child_total_value, self.child_number_visits, self.child_priors, self.number_visits)
+        return selectBestChild(self.child_total_value, self.child_number_visits, self.child_vloss, self.child_priors, self.number_visits, self.vloss, self.avg_value)
 
     def select_leaf(self):
         current = self
-        current.number_visits += 1
-        current.total_value -= 1
+        current.vloss += 1
         while current.is_expanded:
             # Virtual losses
             # TODO: deal with case where same leaf gets chosen twice in a batch
             best_move = current.best_child()
             current = current.maybe_add_child(best_move)
-            current.number_visits += 1
-            current.total_value -= 1
+            current.vloss += 1
         return current
 
     def expand(self, child_priors):
@@ -97,7 +121,9 @@ class UCTNode():
         current = self
         perspective_value = value_estimate
         while current.parent is not None:
-            current.total_value += perspective_value + 1
+            current.total_value += perspective_value
+            current.number_visits += 1
+            current.vloss -= 1
             current = current.parent
             # switch perspective (eval for next player is negative of eval for current playet)
             perspective_value *= -1
@@ -108,13 +134,15 @@ class DummyNode(object):
         self.parent = None
         self.child_total_value = collections.defaultdict(float)
         self.child_number_visits = collections.defaultdict(int)
+        self.child_vloss = collections.defaultdict(int)
 
 
 class Mcts():
-    def __init__(self, evaluator, timeLimit=None, iterationLimit=None, explorationConstant=1 / math.sqrt(2)):
+    def __init__(self, evaluator, explorationConstant=1 / math.sqrt(2)):
         self.evaluator = evaluator
         self.explorationConstant = explorationConstant
 
+    def setLimits(self, timeLimit, iterationLimit):
         if timeLimit != None:
             if iterationLimit != None:
                 raise ValueError(
@@ -133,7 +161,8 @@ class Mcts():
             self.limitType = 'iterations'
 
     # disable stochastic for competitive play
-    def search(self, initialState, batchSize, stochastic=True):
+    def search(self, initialState, batchSize=1, stochastic=True, timeLimit=None, iterationLimit=None):
+        self.setLimits(timeLimit, iterationLimit)
         self.root = UCTNode(initialState, move=None, parent=DummyNode())
 
         if self.limitType == 'time':

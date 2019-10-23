@@ -12,4 +12,4 @@ class RandomEvaluator():
         return priors, np.random.random()*2 - 1
 
     def evaluateMany(self, states):
-        return [self.evaluate(state)[0] for state in states], np.random.random(len(states))*2 - 1
+        return zip(*[self.evaluate(state)[0] for state in states])

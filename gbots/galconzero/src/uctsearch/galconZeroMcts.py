@@ -49,11 +49,11 @@ class GalconZeroMcts():
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = Mcts(evaluator, timeLimit=timeLimit,
-                          iterationLimit=iterationLimit, explorationConstant=1)
+        mctsSearch = Mcts(evaluator, explorationConstant=1)
 
         state = GalconState(g.items, g.you, getEnemyUserN(g), self.mapHelper)
-        chosenActionIndex, numVisited = mctsSearch.search(state, batchSize)
+        chosenActionIndex, numVisited = mctsSearch.search(state, batchSize, timeLimit=timeLimit,
+                                                          iterationLimit=iterationLimit)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
