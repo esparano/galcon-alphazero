@@ -172,7 +172,9 @@ class Mcts():
                 # self.executeSingleRound()
         else:
             while self.root.number_visits < self.iterationLimit:
-                self.executeBatchRound(batchSize)
+                numToExecute = min(self.iterationLimit -
+                                   self.root.number_visits, batchSize)
+                self.executeBatchRound(numToExecute)
                 # self.executeSingleRound()
 
         bestAction = self.getPrincipalVariation(self.root, stochastic)
