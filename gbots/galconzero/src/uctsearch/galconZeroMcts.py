@@ -8,6 +8,7 @@ from training.trainingGame import TrainingGame
 from domain.mapHelper import MapHelper
 from domain.galconState import GalconState
 from evaluator.randomEvaluator import RandomEvaluator
+from gzutils import actionUtils
 
 
 def getEnemyUserN(g):
@@ -45,18 +46,19 @@ class GalconZeroMcts():
         self.mapHelper = MapHelper(g.items)
         self.firstFrame = False
 
-    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, batchSize=1, saveTrainingData=True):
+    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, batchSize=1, saveTrainingData=True, surrenderEnabled=False, SURRENDER_THRESHOLD=-0.99):
         if self.firstFrame:
             self.firstFrameInit(g)
 
-        mctsSearch = Mcts(evaluator, explorationConstant=1)
+        mctsSearch = Mcts(evaluator, explorationConstant=5)
 
         state = GalconState(g.items, g.you, getEnemyUserN(g), self.mapHelper)
-        chosenActionIndex, numVisited = mctsSearch.search(state, batchSize, timeLimit=timeLimit,
-                                                          iterationLimit=iterationLimit)
+        chosenActionIndex, numVisited, rootEval = mctsSearch.search(state, batchSize, timeLimit=timeLimit,
+                                                                    iterationLimit=iterationLimit, stochastic=False)
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
-        self.printResults(chosenActionIndex, numVisited, mctsSearch, False)
+        self.printResults(chosenActionIndex, numVisited,
+                          mctsSearch, rootEval, verbose=False)
 
         if saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)
@@ -65,9 +67,14 @@ class GalconZeroMcts():
                 stateCopy = deepcopy(state)
                 self.trainingGame.appendState(stateCopy, refinedProbs)
 
+        if rootEval < SURRENDER_THRESHOLD and surrenderEnabled:
+            actionUtils.surrender()
+            actionUtils.surrender()
+            logger.log("SURRENDERING, eval = {}".format(rootEval))
+
         return chosenAction
 
-    def printResults(self, chosenActionIndex, numVisited, mctsSearch, verbose=False):
+    def printResults(self, chosenActionIndex, numVisited, mctsSearch, rootEval, verbose=False):
         if verbose:
             logger.log("ACTION TREE:")
 
@@ -81,15 +88,17 @@ class GalconZeroMcts():
                 action = mctsSearch.root.state.mapActionIndexToAction(
                     bestChildIndex)
                 if depth % 2 == 0:
-                    logger.log("Bot: {}".format(str(action)))
+                    logger.log("Bot: {}".format(
+                        action.detailedStr(currentNode.state.mapHelper)))
                 else:
-                    logger.log("Enemy: {}".format(str(action)))
+                    logger.log("Enemy: {}".format(
+                        action.detailedStr(currentNode.state.mapHelper)))
 
             depth += 1
             currentNode = currentNode.children[bestChildIndex]
 
         logger.log("nodes: {}, depth: {}, eval: {:.2f}".format(
-            numVisited, depth, mctsSearch.root.total_value / mctsSearch.root.number_visits))
+            numVisited, depth, rootEval))
 
     def reportGameOver(self, g, winner):
         self.trainingGame.saveGame(g.you, winner == g.you)

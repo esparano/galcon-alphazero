@@ -28,4 +28,7 @@ def plotNNTrainingSession(session):
     # plt.legend(['policy_loss', 'val_policy_loss', 'value_loss','val_value_loss','loss','val_loss',], loc='upper left')  
     plt.legend(['val_policy_loss','val_value_loss','val_loss'], loc='upper left')  
 
+    plt.savefig('recentPlot.png')
+
     plt.show()  
+

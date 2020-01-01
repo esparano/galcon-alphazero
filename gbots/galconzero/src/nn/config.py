@@ -1,0 +1,5 @@
+MODEL_NAME = "basicNetRun1"
+MODEL_LOCATION = f"models/{MODEL_NAME}.model"
+GAME_SOURCE_DIR = f"D:/GalconZero/Games/{MODEL_NAME}"
+GAME_ARCHIVE_DIR_PREFIX = f"D:/GalconZero/OldGames/{MODEL_NAME}"
+MODEL_ARCHIVE_DIR = f"D:/GalconZero/OldModels/{MODEL_NAME}"

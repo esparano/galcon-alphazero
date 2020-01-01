@@ -8,7 +8,6 @@ class Action:
     def __init__(self):
         pass
 
-
 class SendAction(Action):
     def __init__(self, sourceN, targetN, percent):
         self.actionType = SEND_ACTION
@@ -19,6 +18,12 @@ class SendAction(Action):
     def __str__(self):
         return "SEND from {} to {} at {}%".format(
             self.sourceN, self.targetN, self.percent)
+
+    def detailedStr(self, mapHelper):
+        sourceIndex = mapHelper.planetIdToSortedIdMap[self.sourceN]
+        targetIndex = mapHelper.planetIdToSortedIdMap[self.targetN]
+        return "SEND from x={} to x={} at {}%".format(
+            sourceIndex, targetIndex, self.percent)
 
 
 class RedirectAction(Action):
@@ -31,6 +36,11 @@ class RedirectAction(Action):
         return "REDIRECT fleet {} to {}".format(
             self.sourceN, self.targetN)
 
+    def detailedStr(self, mapHelper):
+        targetIndex = mapHelper.planetIdToSortedIdMap[self.targetN]
+        return "REDIRECT fleet {} to x={}".format(
+            self.sourceN, targetIndex)
+
 
 class NullAction(Action):
     def __init__(self):
@@ -38,3 +48,7 @@ class NullAction(Action):
 
     def __str__(self):
         return "PASS"
+
+    def detailedStr(self, mapHelper):
+        return "PASS"
+

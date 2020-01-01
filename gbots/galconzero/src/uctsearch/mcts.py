@@ -33,14 +33,20 @@ def childU(child_number_visits, child_priors, number_visits):
 
 
 @njit
-def selectBestChild(child_total_value, child_number_visits, child_vloss, child_priors, parent_number_visits, parent_vloss, defaultQ):
+def selectBestChild(explorationConst, child_total_value, child_number_visits, child_vloss, child_priors, parent_number_visits, parent_vloss, defaultQ):
     # MAKE SURE to flip child_total_value because parent is opposite player of child!
     virtual_total_value = -child_total_value - child_vloss
     virtual_number_visits = child_number_visits + child_vloss
     virtual_parent_visits = parent_number_visits + parent_vloss
     total = childQ(virtual_total_value, virtual_number_visits, defaultQ) + \
-        childU(virtual_number_visits, child_priors, virtual_parent_visits)
-    return np.argmax(total)
+        explorationConst*childU(virtual_number_visits,
+                                child_priors, virtual_parent_visits)
+
+    bestMove = np.argmax(total)
+    # logger.log("TOTAL:")
+    # logger.log(childQ(virtual_total_value, virtual_number_visits, defaultQ)[bestMove])
+    # logger.log(explorationConst*childU(virtual_number_visits, child_priors, virtual_parent_visits)[bestMove])
+    return bestMove
 
 
 class UCTNode():
@@ -87,16 +93,16 @@ class UCTNode():
         assert self.number_visits > 0, "NUMBER VISITS WAS NOT 0"
         return self.total_value / self.number_visits
 
-    def best_child(self):
-        return selectBestChild(self.child_total_value, self.child_number_visits, self.child_vloss, self.child_priors, self.number_visits, self.vloss, self.avg_value)
+    def best_child(self, explorationConst):
+        return selectBestChild(explorationConst, self.child_total_value, self.child_number_visits, self.child_vloss, self.child_priors, self.number_visits, self.vloss, self.avg_value)
 
-    def select_leaf(self):
+    def select_leaf(self, explorationConst):
         current = self
         current.vloss += 1
         while current.is_expanded:
             # Virtual losses
             # TODO: deal with case where same leaf gets chosen twice in a batch
-            best_move = current.best_child()
+            best_move = current.best_child(explorationConst)
             current = current.maybe_add_child(best_move)
             current.vloss += 1
         return current
@@ -161,7 +167,7 @@ class Mcts():
             self.limitType = 'iterations'
 
     # disable stochastic for competitive play
-    def search(self, initialState, batchSize=1, stochastic=True, timeLimit=None, iterationLimit=None):
+    def search(self, initialState, batchSize=1, stochastic=False, timeLimit=None, iterationLimit=None):
         self.setLimits(timeLimit, iterationLimit)
         self.root = UCTNode(initialState, move=None, parent=DummyNode())
 
@@ -178,11 +184,12 @@ class Mcts():
                 # self.executeSingleRound()
 
         bestAction = self.getPrincipalVariation(self.root, stochastic)
-        return bestAction, self.root.number_visits
+        rootEval = self.root.total_value / self.root.number_visits
+        return bestAction, self.root.number_visits, rootEval
 
     def executeSingleRound(self):
         # log("start: {}, {}".format(self.root.total_value, self.root.number_visits))
-        leaf = self.root.select_leaf()
+        leaf = self.root.select_leaf(self.explorationConstant)
         child_priors, value_estimate = self.evaluator.evaluate(leaf.state)
         leaf.expand(child_priors)
         leaf.backup(value_estimate)
@@ -194,7 +201,7 @@ class Mcts():
         # but it primarily has an effect when total allotted search time is very low because there are more duplicates at the start
         leaves = []
         while len(leaves) < batchSize:
-            leaf = self.root.select_leaf()
+            leaf = self.root.select_leaf(self.explorationConstant)
             leaves.append(leaf)
 
         child_prior_list, value_list = self.evaluator.evaluateMany(

@@ -5,12 +5,12 @@ import math
 from os import listdir
 from os.path import isfile, join
 
+from nn.config import GAME_SOURCE_DIR
 from training.trainingHelper import TrainingHelper
 from training.trainingGame import loadTrainingGame
 from training.nnTrainingDataAugmentor import getXAxisReflectedTrainingData, getYAxisReflectedTrainingData
 from gzutils import logger
 
-trainingGameLocation = "D:/GalconZero/Games"
 TRAINING_FILE_SUFFIX = ".npz"
 GAME_FILE_SUFFIX = ".pickle"
 VALIDATION_FILE_FRACTION = 0.1
@@ -37,10 +37,10 @@ def createTrainingFileForGameIfNotExists(gameFile):
 
 
 def createTrainingFiles():
-    allFiles = [join(trainingGameLocation, f) for f in listdir(
-        trainingGameLocation) if GAME_FILE_SUFFIX in f]
-    for fileName in allFiles:
-        createTrainingFileForGameIfNotExists(fileName)
+    gameFiles = [f"{GAME_SOURCE_DIR}/{fileName}" for fileName in listdir(
+        GAME_SOURCE_DIR) if GAME_FILE_SUFFIX in fileName]
+    for gameFile in gameFiles:
+        createTrainingFileForGameIfNotExists(gameFile)
 
 
 def fetchTrainXY(trainingFile):
@@ -85,16 +85,20 @@ def getTrainingDataForFileList(filePaths):
 
 
 def getTrainingDataForNumGames(num=-1):
-    allFiles = [join(trainingGameLocation, f) for f in listdir(
-        trainingGameLocation) if TRAINING_FILE_SUFFIX in f]
+    allFiles = [join(GAME_SOURCE_DIR, f) for f in listdir(
+        GAME_SOURCE_DIR) if TRAINING_FILE_SUFFIX in f]
 
     # reserve only a few games worth of files for validation only
-    numTrainingFiles = int(
+    totalNumTrainingFiles = int(
         math.ceil(len(allFiles) * (1 - VALIDATION_FILE_FRACTION)))
-    validationFiles = allFiles[numTrainingFiles:]
-    trainingFiles = allFiles[:numTrainingFiles]
+    validationFiles = allFiles[totalNumTrainingFiles:]
+    trainingFiles = allFiles[:totalNumTrainingFiles]
+
+    numTrainingFiles = totalNumTrainingFiles if (num == -1) else num
     trainingFiles = trainingFiles if (
         num == -1) else random.sample(trainingFiles, numTrainingFiles)
+    validationFiles = validationFiles if (num == -1) else random.sample(
+        validationFiles, math.ceil(numTrainingFiles * VALIDATION_FILE_FRACTION))
 
     valTrainX, valYPolicy, valYValue = getTrainingDataForFileList(
         validationFiles)

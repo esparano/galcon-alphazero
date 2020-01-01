@@ -8,3 +8,7 @@ def commit(action):
                                               action.sourceN, action.targetN))
     elif action.actionType == REDIRECT_ACTION:
         logger.send("/REDIR {} {}\n".format(action.sourceN, action.targetN))
+
+def surrender():
+    logger.send("/SURRENDER")
+

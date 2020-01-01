@@ -4,11 +4,14 @@ import cProfile
 
 from uctsearch.galconZeroMcts import GalconZeroMcts
 from domain.models import Galaxy, Item
-from gzutils import logger, commitAction
+from gzutils import logger, actionUtils
 from evaluator.nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-nnEval = NNEval()
+evaluator = NNEval()
+
+from evaluator.simpleEvaluator import SimpleEvaluator
+# evaluator = SimpleEvaluator()
 
 
 ################################################################################
@@ -16,8 +19,8 @@ nnEval = NNEval()
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=400, evaluator=nnEval, batchSize=4)
-    commitAction.commit(action)
+        g, iterationLimit=10, evaluator=evaluator, batchSize=2, surrenderEnabled=True, saveTrainingData=True)
+    actionUtils.commit(action)
 
 ################################################################################
 

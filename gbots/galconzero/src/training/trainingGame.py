@@ -1,7 +1,7 @@
 import pickle
 import time
 
-DEFAULT_FILENAME = 'D:/GalconZero/Games/game_{}_{}.pickle'
+from nn.config import GAME_SOURCE_DIR
 
 
 def loadTrainingGame(filename):
@@ -24,5 +24,6 @@ class TrainingGame():
     def saveGame(self, userN, result):
         self.userN = userN
         self.result = result
-        with open(DEFAULT_FILENAME.format(time.time(), userN), 'wb') as fp:
+        saveGameFileName = f"{GAME_SOURCE_DIR}/game_{time.time()}_{userN}.pickle"
+        with open(saveGameFileName, 'wb') as fp:
             pickle.dump(self, fp)

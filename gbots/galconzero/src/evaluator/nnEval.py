@@ -7,12 +7,14 @@ from training.trainingGame import TrainingGame
 from training.trainingHelper import TrainingHelper, getNNInputFromState
 from nn.nnSetup import NUM_ACTIONS_PER_LAYER, NUM_OUTPUTS, NUM_PLANETS
 from nn.nnModel import getModel
+from nn.config import MODEL_LOCATION
 from gzutils import logger
 from evaluator.evalUtils import applyLegalMoveMask, calculateLegalMoveMaskForState, normalizeActions
 
 
 @njit
 def applyDirichletNoise(nnOutput):
+    # TODO: make this actually correct
     # make sure even if there are no legal moves, NULL-move is still an option.
     nnOutput[0] = nnOutput[0] if nnOutput[0] > 0.000001 else 0.000001
     pass
@@ -20,9 +22,9 @@ def applyDirichletNoise(nnOutput):
 # TODO: inline this function?
 
 
-class NNEval:
+class NNEval: 
 
-    def __init__(self, modelFileName='gz_dev.model'):
+    def __init__(self, modelFileName=MODEL_LOCATION):
         self.model = getModel("galconzero/" + modelFileName)
 
     def evaluate(self, gameState):

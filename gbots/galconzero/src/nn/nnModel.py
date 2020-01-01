@@ -1,4 +1,6 @@
 from keras.models import load_model
+from nn.config import MODEL_LOCATION
+from gzutils import logger
 
 # THIS IS REQUIRED TO STOP TENSORFLOW FROM USING UP ALL GPU MEMORY
 # otherwise the bot can't play against itself since the first one "steals" the GPU
@@ -17,6 +19,6 @@ def initialize():
     set_session(session)
 
 
-def getModel(modelFileName='gz_dev.model'):
+def getModel(modelFileName=MODEL_LOCATION):
     initialize()
     return load_model(modelFileName)
