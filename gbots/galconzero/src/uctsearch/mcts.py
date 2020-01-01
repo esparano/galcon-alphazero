@@ -210,10 +210,16 @@ class Mcts():
 
     # returns "best" child node
     def getPrincipalVariation(self, node, stochastic):
+        selectionArray = node.child_number_visits
+        # if totalVisits is 0, choose from priors instead of visits
+        if node.number_visits == 1:
+            logger.log(
+                "WARNING: Root node not explored. Choosing from priors instead.")
+            selectionArray = node.child_priors
+
         if stochastic:
-            normalizedVisits = (node.child_number_visits /
-                                np.sum(node.child_number_visits))
+            normalizedVisits = selectionArray / np.sum(selectionArray)
             choice = np.random.choice(
                 np.arange(normalizedVisits.size), p=normalizedVisits)
             return choice
-        return np.argmax(node.child_number_visits)
+        return np.argmax(selectionArray)
