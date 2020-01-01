@@ -55,7 +55,6 @@ def getTrainingDataForFileList(filePaths):
     evals = []
 
     for filePath in filePaths:
-        #     print("loading training file {}".format(filePath))
         trainX, policy, posEval = fetchTrainXY(filePath)
 
         # no reflection
