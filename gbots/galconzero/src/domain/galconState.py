@@ -18,6 +18,9 @@ class GalconState():
         # TODO: expand and calculate both reward and possible actions simultaneously?
         # Then mark node as expanded and store results
 
+    def setActions(self, actions):
+        self.actions = actions
+
     def mapActionIndexToAction(self, actionIndex):
         if actionIndex == 0:
             return actions.NullAction()
@@ -48,7 +51,7 @@ class GalconState():
 
         # TODO: don't simulate forward if owner is not the bot - simultaneous turns??
         # TODO: go back to default timestep
-        stateSim.simulate(newState.items, 0.5)
+        stateSim.simulate(newState.items, 2)
 
         return newState
 

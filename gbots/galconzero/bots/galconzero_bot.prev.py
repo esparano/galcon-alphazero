@@ -5,13 +5,16 @@ import cProfile
 from uctsearch.galconZeroMcts import GalconZeroMcts
 from domain.models import Galaxy, Item
 from gzutils import logger, actionUtils
-from evaluator.nnEval import NNEval
 
 galconZeroMcts = GalconZeroMcts()
-evaluator = NNEval()
+
+# from evaluator.nnEval import NNEval
+# evaluator = NNEval()
 
 from evaluator.simpleEvaluator import SimpleEvaluator
-# evaluator = SimpleEvaluator()
+evaluator = SimpleEvaluator()
+
+from nn.nnSetup import NUM_PLANETS
 
 
 ################################################################################
@@ -19,10 +22,15 @@ from evaluator.simpleEvaluator import SimpleEvaluator
 
 def bot(g):
     action = galconZeroMcts.getBestMove(
-        g, iterationLimit=10, evaluator=evaluator, batchSize=2, surrenderEnabled=True, saveTrainingData=True)
+        g, iterationLimit=1, evaluator=evaluator, batchSize=1, surrenderEnabled=False, saveTrainingData=False)
     actionUtils.commit(action)
 
 ################################################################################
+
+
+def limitPlanetCount(maxPlanetCount, g):
+    g.items = {k: v for (k, v) in g.items.items()
+               if k <= maxPlanetCount + 3 or v.type != "planet"}
 
 
 def main():
@@ -84,6 +92,7 @@ def parse(g, line):
             neutral=int(t[2]) == 1,  # TODO: this is probably unstable???
         )
         g.items[o.n] = o
+        limitPlanetCount(NUM_PLANETS, g)
     elif t[0] == "/FLEET":
         o = Item(
             n=int(t[1]),

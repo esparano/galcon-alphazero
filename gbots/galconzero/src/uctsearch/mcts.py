@@ -8,7 +8,6 @@ import numpy as np
 from numba import njit, jit
 
 from gzutils import logger
-from nn.nnSetup import NUM_OUTPUTS
 
 MIN_CHILD_U = -1000000
 
@@ -56,13 +55,6 @@ class UCTNode():
         self.is_expanded = False
         self.parent = parent  # Optional[UCTNode]
         self.children = {}  # Dict[move, UCTNode]
-        self.child_priors = np.zeros([NUM_OUTPUTS], dtype=np.float32)
-        self.child_total_value = np.zeros(
-            [NUM_OUTPUTS], dtype=np.float32)
-        self.child_number_visits = np.zeros(
-            [NUM_OUTPUTS], dtype=np.int32)
-        self.child_vloss = np.zeros(
-            [NUM_OUTPUTS], dtype=np.int32)
 
     @property
     def number_visits(self):
@@ -115,6 +107,11 @@ class UCTNode():
         self.is_expanded = True
 
         self.child_priors = child_priors
+        self.child_total_value = np.zeros(
+            [child_priors.size], dtype=np.float32)
+        self.child_number_visits = np.zeros(
+            [child_priors.size], dtype=np.int32)
+        self.child_vloss = np.zeros([child_priors.size], dtype=np.int32)
         # TODO: Q seeding (see incorporate_results in mcts.py, or Leela for examples)
 
     def maybe_add_child(self, move):

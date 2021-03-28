@@ -46,7 +46,8 @@ class GalconZeroMcts():
         self.mapHelper = MapHelper(g.items)
         self.firstFrame = False
 
-    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, batchSize=1, saveTrainingData=True, surrenderEnabled=False, SURRENDER_THRESHOLD=-0.99):
+    def getBestMove(self, g, timeLimit=None, iterationLimit=None, evaluator=dummyEvaluator, batchSize=1, saveTrainingData=True,
+                    surrenderEnabled=False, SURRENDER_THRESHOLD=-0.99, verbose=False):
         if self.firstFrame:
             self.firstFrameInit(g)
 
@@ -58,7 +59,7 @@ class GalconZeroMcts():
         chosenAction = state.mapActionIndexToAction(chosenActionIndex)
 
         self.printResults(chosenActionIndex, numVisited,
-                          mctsSearch, rootEval, verbose=False)
+                          mctsSearch, rootEval, verbose=verbose)
 
         if saveTrainingData:
             refinedProbs = getRefinedProbs(mctsSearch.root)

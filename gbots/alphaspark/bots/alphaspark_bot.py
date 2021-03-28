@@ -2,28 +2,26 @@ import sys
 import random
 import cProfile
 
-from uctsearch.galconZeroMcts import GalconZeroMcts
+from main.alphaSparkMain import AlphaSparkMain
 from domain.models import Galaxy, Item
 from gzutils import logger, actionUtils
 
-galconZeroMcts = GalconZeroMcts()
+alphaSpark = AlphaSparkMain()
 
 # from evaluator.nnEval import NNEval
 # evaluator = NNEval()
 
-from evaluator.simpleEvaluator import SimpleEvaluator
-evaluator = SimpleEvaluator()
-
 from nn.nnSetup import NUM_PLANETS
-
 
 ################################################################################
 
 
 def bot(g):
-    action = galconZeroMcts.getBestMove(
-        g, iterationLimit=1000, evaluator=evaluator, batchSize=1, surrenderEnabled=False, saveTrainingData=False, verbose=False)
-    actionUtils.commit(action)
+    actions = alphaSpark.getActions(g, verbose=True)
+    actionUtils.commitAll(actions)
+
+def bot_gameOver(g, winner):
+    alphaSpark.reportGameOver(g, winner)
 
 ################################################################################
 
@@ -59,7 +57,7 @@ def parse(g, line):
     elif t[0] == "/PRINT":
         logger.log("\t".join(t[1:]))
     elif t[0] == "/RESULTS":
-        galconZeroMcts.reportGameOver(g, int(t[4]))
+        bot_gameOver(g, int(t[4]))
         logger.log("\t".join(t[1:]))
     elif t[0] == "/RESET":
         g.reset()
@@ -128,6 +126,8 @@ def sync(g, t):
             for k in fields:
                 v = t[i]
                 i += 1
+                if int(v) != float(v):
+                    logln("FOUND ONEEEE " + v) 
                 if k == 'X':
                     o.x = float(v)/100  # TODO: verify normalization is working
                 elif k == 'Y':
